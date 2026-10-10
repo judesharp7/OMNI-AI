@@ -1,0 +1,27 @@
+# Optional heavy dependencies — install only what you need.
+# Run:  pip install -r requirements-optional.txt
+
+# AI / ML (enables PyTorch transformer model in core/brain.py)
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+
+# TensorFlow (alternative AI backend in core/ai_models.py)
+tensorflow>=2.13.0
+
+# Speech & Voice
+SpeechRecognition>=3.10.0
+pyttsx3>=2.90
+pyaudio>=0.2.13
+
+# Windows system integration
+WMI>=1.5.1
+PyWin32>=305
+
+# Kivy GUI (alternative to web UI)
+kivy>=2.2.0
+kivy-garden>=0.1.5
+
+# Data / visualization
+matplotlib>=3.7.0
+numpy>=1.24.0

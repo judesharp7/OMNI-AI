@@ -1,0 +1,485 @@
+#:kivy 2.0
+# OMNI-AI Kivy Styles
+# Purple-Dark Morphism + Neon Colors
+
+#:set primary_purple (0.54, 0.32, 0.96, 1)
+#:set neon_purple (0.85, 0.56, 0.94, 1)
+#:set neon_cyan (0.02, 0.73, 0.83, 1)
+#:set neon_pink (0.92, 0.56, 0.62, 1)
+#:set neon_green (0.06, 0.73, 0.5, 1)
+#:set neon_blue (0.23, 0.51, 1, 1)
+#:set dark_bg (0.05, 0.05, 0.18, 1)
+#:set dark_surface (0.08, 0.08, 0.22, 1)
+
+OmniAIButton@Button;
+    background_color: 0.85, 0.56, 0.94, 0.7
+    color: 0.05, 0.05, 0.18, 1
+    font_size: '14sp'
+    bold: True
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [15]
+
+<NeonLabel@Label>:
+    color: 0.85, 0.56, 0.94, 1
+    bold: True
+    font_size: '14sp'
+
+<StatCard@BoxLayout>:
+    orientation: 'vertical'
+    padding: 10
+    spacing: 5
+    size_hint_y: None
+    height: 150
+    canvas.before:
+        Color:
+            rgba: 0.05, 0.05, 0.18, 0.7
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [15]
+        Color:
+            rgba: 0.85, 0.56, 0.94, 0.3
+        Line:
+            rectangle: (self.x, self.y, self.width, self.height)
+            width: 2
+
+<SecurityCard@BoxLayout>:
+    orientation: 'vertical'
+    padding: 10
+    spacing: 5
+    size_hint_y: None
+    height: 120
+    canvas.before:
+        Color:
+            rgba: 0.05, 0.05, 0.18, 0.7
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [15]
+        Color:
+            rgba: 0.85, 0.56, 0.94, 0.3
+        Line:
+            rectangle: (self.x, self.y, self.width, self.height)
+            width: 2
+
+<AIModelCard@BoxLayout>:
+    orientation: 'vertical'
+    padding: 10
+    spacing: 5
+    size_hint_y: None
+    height: 130
+    canvas.before:
+        Color:
+            rgba: 0.05, 0.05, 0.18, 0.7
+        RoundedRectangle:
+            size: self.size
+            pos: self.pos
+            radius: [15]
+        Color:
+            rgba: 0.85, 0.56, 0.94, 0.3
+        Line:
+            rectangle: (self.x, self.y, self.width, self.height)
+            width: 2
+
+<OmniAIApp>:
+    Canvas:
+        Color:
+            rgba: 0.05, 0.05, 0.18, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 0
+        spacing: 0
+        
+        # Header
+        BoxLayout:
+            size_hint_y: 0.08
+            padding: 15
+            spacing: 10
+            canvas.before:
+                Color:
+                    rgba: 0.05, 0.05, 0.18, 0.9
+                Rectangle:
+                    size: self.size
+                    pos: self.pos
+                Color:
+                    rgba: 0.85, 0.56, 0.94, 0.3
+                Line:
+                    rectangle: (self.x, self.y, self.width, self.height)
+                    width: 2
+            
+            Label:
+                text: '[b][size=20]OMNI-AI[/size] - Futuristic Python GUI[/b]'
+                markup: True
+                size_hint_x: 0.7
+                color: 0.85, 0.56, 0.94, 1
+                bold: True
+            
+            Button:
+                text: '⚙ Settings'
+                size_hint_x: 0.15
+                background_color: 0.85, 0.56, 0.94, 0.7
+                color: 0.05, 0.05, 0.18, 1
+            
+            Button:
+                text: '🌙 Theme'
+                size_hint_x: 0.15
+                background_color: 0, 0.73, 0.83, 0.7
+                color: 0.05, 0.05, 0.18, 1
+        
+        # Main content (tabbed)
+        TabbedPanel:
+            do_default_tab: False
+            tab_width: 150
+            tab_height: 45
+            
+            TabbedPanelItem:
+                text: '📊 Dashboard'
+                
+                ScrollView:
+                    GridLayout:
+                        cols: 1
+                        padding: 10
+                        spacing: 10
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        # Stats Cards Row 1
+                        GridLayout:
+                            cols: 4
+                            spacing: 10
+                            size_hint_y: None
+                            height: 150
+                            
+                            StatCard:
+                                Label:
+                                    text: 'CPU Usage'
+                                    bold: True
+                                    color: 0.85, 0.56, 0.94, 1
+                                Label:
+                                    text: '45%'
+                                    font_size: '24sp'
+                                    bold: True
+                                    color: 0.85, 0.56, 0.94, 1
+                            
+                            StatCard:
+                                Label:
+                                    text: 'Memory Usage'
+                                    bold: True
+                                    color: 0, 0.73, 0.83, 1
+                                Label:
+                                    text: '62%'
+                                    font_size: '24sp'
+                                    bold: True
+                                    color: 0, 0.73, 0.83, 1
+                            
+                            StatCard:
+                                Label:
+                                    text: 'Disk Usage'
+                                    bold: True
+                                    color: 0.92, 0.56, 0.62, 1
+                                Label:
+                                    text: '38%'
+                                    font_size: '24sp'
+                                    bold: True
+                                    color: 0.92, 0.56, 0.62, 1
+                            
+                            StatCard:
+                                Label:
+                                    text: 'Network'
+                                    bold: True
+                                    color: 0.06, 0.73, 0.5, 1
+                                Label:
+                                    text: 'Active'
+                                    font_size: '20sp'
+                                    bold: True
+                                    color: 0.06, 0.73, 0.5, 1
+                        
+                        # Quick Actions
+                        Label:
+                            text: 'Quick Actions'
+                            bold: True
+                            size_hint_y: None
+                            height: 40
+                            color: 0.85, 0.56, 0.94, 1
+                        
+                        GridLayout:
+                            cols: 3
+                            spacing: 10
+                            size_hint_y: None
+                            height: 50
+                            
+                            OmniAIButton:
+                                text: '✓ System Health Check'
+                            
+                            OmniAIButton:
+                                text: '🔐 Security Audit'
+                            
+                            OmniAIButton:
+                                text: '🎤 Voice Test'
+            
+            TabbedPanelItem:
+                text: '🎤 Voice'
+                
+                BoxLayout:
+                    orientation: 'vertical'
+                    padding: 10
+                    spacing: 10
+                    
+                    # Voice Visualizer
+                    BoxLayout:
+                        size_hint_y: 0.5
+                        spacing: 3
+                        padding: 10
+                        canvas.before:
+                            Color:
+                                rgba: 0.05, 0.05, 0.18, 0.8
+                            RoundedRectangle:
+                                size: self.size
+                                pos: self.pos
+                                radius: [15]
+                            Color:
+                                rgba: 0.85, 0.56, 0.94, 0.2
+                            Line:
+                                rectangle: (self.x, self.y, self.width, self.height)
+                                width: 2
+                        
+                        ProgressBar:
+                            orientation: 'vertical'
+                            max: 100
+                            value: 65
+                        ProgressBar:
+                            orientation: 'vertical'
+                            max: 100
+                            value: 80
+                        ProgressBar:
+                            orientation: 'vertical'
+                            max: 100
+                            value: 45
+                        ProgressBar:
+                            orientation: 'vertical'
+                            max: 100
+                            value: 92
+                    
+                    # Controls
+                    GridLayout:
+                        cols: 3
+                        spacing: 10
+                        size_hint_y: 0.2
+                        
+                        OmniAIButton:
+                            text: '🔴 Start Listening'
+                            background_color: 0.92, 0.56, 0.62, 0.7
+                        
+                        Button:
+                            text: '⭕ Stop'
+                            background_color: 0.6, 0.3, 0.3, 0.7
+                        
+                        OmniAIButton:
+                            text: '🔊 Test'
+                            background_color: 0.06, 0.73, 0.5, 0.7
+                    
+                    # Transcript
+                    TextInput:
+                        multiline: True
+                        readonly: True
+                        text: '[Voice input will appear here]'
+                        background_color: 0, 0, 0, 0.8
+                        foreground_color: 0.06, 0.73, 0.5, 1
+                        font_size: '11sp'
+                        size_hint_y: 0.3
+            
+            TabbedPanelItem:
+                text: '🔐 Security'
+                
+                ScrollView:
+                    GridLayout:
+                        cols: 1
+                        padding: 10
+                        spacing: 10
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        SecurityCard:
+                            Label:
+                                text: 'Data Encryption (Fernet)'
+                                bold: True
+                                color: 0.85, 0.56, 0.94, 1
+                            
+                            Label:
+                                text: 'Encrypt sensitive data with AES-128'
+                                color: 0.66, 0.66, 0.66, 1
+                                font_size: '10sp'
+                            
+                            Button:
+                                text: 'Encrypt'
+                                background_color: 0.85, 0.56, 0.94, 0.6
+                        
+                        SecurityCard:
+                            Label:
+                                text: 'Password Hashing (PBKDF2)'
+                                bold: True
+                                color: 0, 0.73, 0.83, 1
+                            
+                            Label:
+                                text: 'Secure password with 100k iterations'
+                                color: 0.66, 0.66, 0.66, 1
+                                font_size: '10sp'
+                            
+                            Button:
+                                text: 'Hash'
+                                background_color: 0, 0.73, 0.83, 0.6
+                        
+                        SecurityCard:
+                            Label:
+                                text: 'Security Audit'
+                                bold: True
+                                color: 0.92, 0.56, 0.62, 1
+                            
+                            Label:
+                                text: 'Comprehensive system security check'
+                                color: 0.66, 0.66, 0.66, 1
+                                font_size: '10sp'
+                            
+                            Button:
+                                text: 'Audit'
+                                background_color: 0.92, 0.56, 0.62, 0.6
+            
+            TabbedPanelItem:
+                text: '📈 Monitor'
+                
+                BoxLayout:
+                    orientation: 'vertical'
+                    padding: 10
+                    spacing: 10
+                    
+                    Label:
+                        text: 'System Monitoring Charts'
+                        bold: True
+                        color: 0.85, 0.56, 0.94, 1
+                        size_hint_y: 0.1
+                    
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 10
+                        
+                        # Placeholder for matplotlib charts
+                        Label:
+                            text: '[Charts will display here after matplotlib integration]'
+                            color: 0.66, 0.66, 0.66, 1
+            
+            TabbedPanelItem:
+                text: '🤖 AI Models'
+                
+                ScrollView:
+                    GridLayout:
+                        cols: 1
+                        padding: 10
+                        spacing: 10
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        AIModelCard:
+                            Label:
+                                text: 'TensorFlow'
+                                bold: True
+                                color: 1, 0.65, 0, 1
+                            
+                            Label:
+                                text: 'Intent Classification, Entity Extraction'
+                                color: 0.66, 0.66, 0.66, 1
+                                font_size: '10sp'
+                            
+                            Label:
+                                text: 'Status: OPERATIONAL'
+                                color: 0.06, 0.73, 0.5, 1
+                                bold: True
+                                font_size: '11sp'
+                            
+                            Button:
+                                text: 'Analyze'
+                                background_color: 1, 0.65, 0, 0.7
+                        
+                        AIModelCard:
+                            Label:
+                                text: 'PyTorch'
+                                bold: True
+                                color: 0.85, 0.56, 0.94, 1
+                            
+                            Label:
+                                text: 'Advanced NLP, Transformers'
+                                color: 0.66, 0.66, 0.66, 1
+                                font_size: '10sp'
+                            
+                            Label:
+                                text: 'Status: OPERATIONAL'
+                                color: 0.06, 0.73, 0.5, 1
+                                bold: True
+                                font_size: '11sp'
+                            
+                            Button:
+                                text: 'Analyze'
+                                background_color: 0.85, 0.56, 0.94, 0.7
+                        
+                        AIModelCard:
+                            Label:
+                                text: 'Hybrid AI Engine'
+                                bold: True
+                                color: 0, 0.73, 0.83, 1
+                            
+                            Label:
+                                text: 'Intent + NLP + Entity Extraction'
+                                color: 0.66, 0.66, 0.66, 1
+                                font_size: '10sp'
+                            
+                            Label:
+                                text: 'Status: OPERATIONAL'
+                                color: 0.06, 0.73, 0.5, 1
+                                bold: True
+                                font_size: '11sp'
+                            
+                            Button:
+                                text: 'Analyze'
+                                background_color: 0, 0.73, 0.83, 0.7
+            
+            TabbedPanelItem:
+                text: '⌨ Terminal'
+                
+                BoxLayout:
+                    orientation: 'vertical'
+                    padding: 10
+                    spacing: 10
+                    
+                    TextInput:
+                        text: 'OMNI-AI Terminal v1.0\\nType help for commands\\n\\n>>> '
+                        multiline: True
+                        readonly: True
+                        background_color: 0, 0, 0, 0.9
+                        foreground_color: 0.06, 0.73, 0.5, 1
+                        font_name: 'Courier'
+                        font_size: '11sp'
+                    
+                    BoxLayout:
+                        size_hint_y: 0.15
+                        spacing: 10
+                        
+                        TextInput:
+                            multiline: False
+                            background_color: 0, 0, 0, 0.9
+                            foreground_color: 0.06, 0.73, 0.5, 1
+                            font_name: 'Courier'
+                            font_size: '11sp'
+                            hint_text: 'Enter command...'
+                        
+                        Button:
+                            text: 'Execute'
+                            size_hint_x: 0.2
+                            background_color: 0.06, 0.73, 0.5, 0.7

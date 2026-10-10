@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMNI-AI - Futuristic Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="logo-glow">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>OMNI<span class="neon-purple">-AI</span></h1>
+                    <p class="tagline">Futuristic Assistant Platform</p>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="control-btn" id="themePulse" title="Theme">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="control-btn" id="settingsBtn" title="Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="main-grid">
+            <!-- Left Sidebar -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-item active" data-section="dashboard">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-section="voice">
+                        <i class="fas fa-microphone"></i>
+                        <span>Voice</span>
+                    </button>
+                    <button class="nav-item" data-section="security">
+                        <i class="fas fa-shield"></i>
+                        <span>Security</span>
+                    </button>
+                    <button class="nav-item" data-section="monitor">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Monitor</span>
+                    </button>
+                    <button class="nav-item" data-section="ai">
+                        <i class="fas fa-brain"></i>
+                        <span>AI Models</span>
+                    </button>
+                    <button class="nav-item" data-section="terminal">
+                        <i class="fas fa-terminal"></i>
+                        <span>Terminal</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="status-indicator">
+                        <span class="pulse"></span>
+                        <span class="status-text">System Online</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Content -->
+            <section class="content-area">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="section-content active">
+                    <div class="section-header">
+                        <h2>System Dashboard</h2>
+                        <div class="header-meta">
+                            <span class="time-display" id="timeDisplay">00:00:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon cpu">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>CPU Usage</h3>
+                                <p class="stat-value" id="cpuUsage">--</p>
+                                <div class="stat-bar">
+                                    <div class="stat-fill" id="cpuBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon memory">
+                                <i class="fas fa-memory"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Memory</h3>
+                                <p class="stat-value" id="memoryUsage">--</p>
+                                <div class="stat-bar">
+                                    <div class="stat-fill" id="memoryBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon disk">
+                                <i class="fas fa-hard-drive"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Disk Usage</h3>
+                                <p class="stat-value" id="diskUsage">--</p>
+                                <div class="stat-bar">
+                                    <div class="stat-fill" id="diskBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card">
+                            <div class="stat-icon network">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>Network</h3>
+                                <p class="stat-value" id="networkStatus">Active</p>
+                                <div class="stat-indicator">
+                                    <span class="online-pulse"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <h3>Quick Actions</h3>
+                        <div class="action-buttons">
+                            <button class="action-btn" id="systemHealthBtn">
+                                <i class="fas fa-heartbeat"></i>
+                                System Health
+                            </button>
+                            <button class="action-btn" id="securityAuditBtn">
+                                <i class="fas fa-shield-alt"></i>
+                                Security Audit
+                            </button>
+                            <button class="action-btn" id="refreshBtn">
+                                <i class="fas fa-sync"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Voice Section -->
+                <div id="voice" class="section-content">
+                    <div class="section-header">
+                        <h2>Voice Assistant</h2>
+                    </div>
+
+                    <div class="voice-container">
+                        <div class="voice-visualizer">
+                            <div class="visualizer-bars">
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                                <div class="bar"></div>
+                            </div>
+                            <p id="voiceStatus">Ready to listen</p>
+                        </div>
+
+                        <div class="voice-controls">
+                            <button class="voice-btn pulse-btn" id="listenBtn">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button class="voice-btn" id="speakBtn">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                        </div>
+
+                        <div class="voice-transcript">
+                            <div class="transcript-label">Input Transcript</div>
+                            <div class="transcript-content" id="inputTranscript">
+                                Press the microphone button to start listening...
+                            </div>
+                            <div class="transcript-label">Response</div>
+                            <div class="transcript-content" id="responseTranscript">
+                                OMNI-AI response will appear here...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Section -->
+                <div id="security" class="section-content">
+                    <div class="section-header">
+                        <h2>Security & Encryption</h2>
+                    </div>
+
+                    <div class="security-container">
+                        <div class="security-card">
+                            <h3>
+                                <i class="fas fa-lock"></i>
+                                Data Encryption
+                            </h3>
+                            <div class="security-content">
+                                <p>Encrypt sensitive data using Fernet encryption</p>
+                                <div class="input-group">
+                                    <input type="text" id="dataInput" placeholder="Enter data to encrypt...">
+                                    <button id="encryptBtn" class="action-btn">Encrypt</button>
+                                </div>
+                                <div class="result-box" id="encryptResult"></div>
+                            </div>
+                        </div>
+
+                        <div class="security-card">
+                            <h3>
+                                <i class="fas fa-key"></i>
+                                Password & Hashing
+                            </h3>
+                            <div class="security-content">
+                                <p>Hash and verify passwords securely</p>
+                                <div class="input-group">
+                                    <input type="password" id="passwordInput" placeholder="Enter password...">
+                                    <button id="hashBtn" class="action-btn">Hash</button>
+                                </div>
+                                <div class="result-box" id="hashResult"></div>
+                            </div>
+                        </div>
+
+                        <div class="security-card">
+                            <h3>
+                                <i class="fas fa-shield-alt"></i>
+                                Security Audit
+                            </h3>
+                            <div class="security-content">
+                                <p>Run comprehensive security checks</p>
+                                <button id="runAuditBtn" class="action-btn full-width">
+                                    Run Audit
+                                </button>
+                                <div class="audit-results" id="auditResults"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monitoring Section -->
+                <div id="monitor" class="section-content">
+                    <div class="section-header">
+                        <h2>System Monitoring</h2>
+                    </div>
+
+                    <div class="monitor-container">
+                        <div class="monitor-card">
+                            <h3>CPU Metrics</h3>
+                            <canvas id="cpuChart"></canvas>
+                        </div>
+
+                        <div class="monitor-card">
+                            <h3>Memory Usage</h3>
+                            <canvas id="memoryChart"></canvas>
+                        </div>
+
+                        <div class="monitor-card">
+                            <h3>Process Overview</h3>
+                            <div id="processOverview" class="process-list"></div>
+                        </div>
+
+                        <div class="monitor-card">
+                            <h3>System Health</h3>
+                            <div id="systemHealth" class="health-indicators"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Models Section -->
+                <div id="ai" class="section-content">
+                    <div class="section-header">
+                        <h2>AI Models & Analysis</h2>
+                    </div>
+
+                    <div class="ai-container">
+                        <div class="ai-card">
+                            <div class="ai-icon tensorflow">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <h3>TensorFlow Models</h3>
+                            <p>Intent classification & entity extraction</p>
+                            <div class="status-badge">
+                                <span class="online-pulse"></span>
+                                Available
+                            </div>
+                        </div>
+
+                        <div class="ai-card">
+                            <div class="ai-icon pytorch">
+                                <i class="fas fa-network-wired"></i>
+                            </div>
+                            <h3>PyTorch Models</h3>
+                            <p>Advanced NLP & transformers</p>
+                            <div class="status-badge">
+                                <span class="online-pulse"></span>
+                                Available
+                            </div>
+                        </div>
+
+                        <div class="ai-card">
+                            <div class="ai-icon nlp">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3>NLP Engine</h3>
+                            <p>Natural language processing</p>
+                            <div class="ai-input">
+                                <input type="text" id="nlpInput" placeholder="Enter text for analysis...">
+                                <button id="analyzeBtn" class="action-btn">Analyze</button>
+                            </div>
+                            <div id="nlpResult" class="result-box"></div>
+                        </div>
+
+                        <div class="ai-card">
+                            <div class="ai-icon llm">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h3>Model Status</h3>
+                            <p>View all active AI models</p>
+                            <button id="modelsStatusBtn" class="action-btn full-width">
+                                View Status
+                            </button>
+                            <div id="modelsStatus" class="result-box"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terminal Section -->
+                <div id="terminal" class="section-content">
+                    <div class="section-header">
+                        <h2>Command Terminal</h2>
+                    </div>
+
+                    <div class="terminal-container">
+                        <div class="terminal-display" id="terminalDisplay">
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span>
+                                <span>Welcome to OMNI-AI Terminal</span>
+                            </div>
+                            <div class="terminal-line">
+                                <span class="terminal-prompt">$</span>
+                                <span>Type 'help' for available commands</span>
+                            </div>
+                        </div>
+                        <div class="terminal-input-group">
+                            <span class="terminal-prompt">$</span>
+                            <input type="text" id="terminalInput" placeholder="Enter command..." class="terminal-input">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel -->
+            <aside class="right-panel">
+                <div class="panel-card">
+                    <h3>System Status</h3>
+                    <div class="status-list">
+                        <div class="status-item">
+                            <span class="status-label">AI System</span>
+                            <span class="status-badge green">Online</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Voice Engine</span>
+                            <span class="status-badge green">Ready</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Encryption</span>
+                            <span class="status-badge green">Secure</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Monitor</span>
+                            <span class="status-badge green">Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-log" id="activityLog">
+                        <div class="activity-item">
+                            <span class="time">Just now</span>
+                            <span class="action">System initialized</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h3>Quick Info</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label">Uptime</span>
+                            <span class="value" id="uptimeValue">0:00:00</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Version</span>
+                            <span class="value">2.0</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Modal for Settings -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" id="closeSettings">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="neonToggle" checked>
+                        <span>Neon Effects</span>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span>Sound Effects</span>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="animToggle" checked>
+                        <span>Animations</span>
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        Voice Speed:
+                        <input type="range" id="voiceSpeedSlider" min="50" max="200" value="150">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Elements -->
+    <div class="background-grid"></div>
+    <div class="tech-words">
+        <span>AI</span>
+        <span>NEURAL</span>
+        <span>DATA</span>
+        <span>QUANTUM</span>
+        <span>CYBER</span>
+        <span>SYNC</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
