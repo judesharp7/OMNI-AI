@@ -63,9 +63,9 @@
                 </nav>
 
                 <div class="sidebar-footer">
-                    <div class="status-indicator">
+                    <div class="status-indicator" role="status">
                         <span class="pulse"></span>
-                        <span class="status-text">System Online</span>
+                        <span class="status-text" id="systemOnlineStatus">Connecting…</span>
                     </div>
                 </div>
             </aside>
@@ -128,7 +128,7 @@
                             </div>
                             <div class="stat-content">
                                 <h3>Network</h3>
-                                <p class="stat-value" id="networkStatus">Active</p>
+                                <p class="stat-value" id="networkStatus">Checking…</p>
                                 <div class="stat-indicator">
                                     <span class="online-pulse"></span>
                                 </div>
@@ -184,6 +184,11 @@
                         </div>
 
                         <div class="voice-transcript">
+                            <div class="transcript-label">Type a message</div>
+                            <div class="voice-input-group">
+                                <input type="text" id="voiceTextInput" placeholder="Type a command or question…" maxlength="4000">
+                                <button id="voiceSendBtn" class="action-btn">Send</button>
+                            </div>
                             <div class="transcript-label">Input Transcript</div>
                             <div class="transcript-content" id="inputTranscript">
                                 Press the microphone button to start listening...
@@ -258,22 +263,24 @@
                     <div class="monitor-container">
                         <div class="monitor-card">
                             <h3>CPU Metrics</h3>
-                            <canvas id="cpuChart"></canvas>
+                            <p class="monitor-value" id="monitorCpuValue">Unavailable</p>
+                            <div class="stat-bar"><div class="stat-fill" id="monitorCpuBar"></div></div>
                         </div>
 
                         <div class="monitor-card">
                             <h3>Memory Usage</h3>
-                            <canvas id="memoryChart"></canvas>
+                            <p class="monitor-value" id="monitorMemoryValue">Unavailable</p>
+                            <div class="stat-bar"><div class="stat-fill" id="monitorMemoryBar"></div></div>
                         </div>
 
                         <div class="monitor-card">
                             <h3>Process Overview</h3>
-                            <div id="processOverview" class="process-list"></div>
+                            <div id="processOverview" class="process-list" aria-live="polite"></div>
                         </div>
 
                         <div class="monitor-card">
                             <h3>System Health</h3>
-                            <div id="systemHealth" class="health-indicators"></div>
+                            <div id="systemHealth" class="health-indicators" aria-live="polite"></div>
                         </div>
                     </div>
                 </div>
@@ -291,9 +298,9 @@
                             </div>
                             <h3>TensorFlow Models</h3>
                             <p>Intent classification & entity extraction</p>
-                            <div class="status-badge">
+                            <div class="status-badge" id="tensorflowStatus">
                                 <span class="online-pulse"></span>
-                                Available
+                            Checking…
                             </div>
                         </div>
 
@@ -303,9 +310,9 @@
                             </div>
                             <h3>PyTorch Models</h3>
                             <p>Advanced NLP & transformers</p>
-                            <div class="status-badge">
+                            <div class="status-badge" id="pytorchStatus">
                                 <span class="online-pulse"></span>
-                                Available
+                            Checking…
                             </div>
                         </div>
 
@@ -368,19 +375,19 @@
                     <div class="status-list">
                         <div class="status-item">
                             <span class="status-label">AI System</span>
-                            <span class="status-badge green">Online</span>
+                            <span class="status-badge green" id="brainStatus">Checking…</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">Voice Engine</span>
-                            <span class="status-badge green">Ready</span>
+                            <span class="status-badge green" id="voiceEngineStatus">Checking…</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">Encryption</span>
-                            <span class="status-badge green">Secure</span>
+                            <span class="status-badge green" id="encryptionStatus">Checking…</span>
                         </div>
                         <div class="status-item">
                             <span class="status-label">Monitor</span>
-                            <span class="status-badge green">Active</span>
+                            <span class="status-badge green" id="monitorStatus">Checking…</span>
                         </div>
                     </div>
                 </div>
@@ -413,11 +420,11 @@
     </div>
 
     <!-- Modal for Settings -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
+    <div id="settingsModal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
             <div class="modal-header">
-                <h2>Settings</h2>
-                <button class="close-btn" id="closeSettings">&times;</button>
+                <h2 id="settingsTitle">Settings</h2>
+                <button class="close-btn" id="closeSettings" aria-label="Close settings">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="setting-group">

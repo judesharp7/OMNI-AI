@@ -15,15 +15,13 @@ import base64
 try:
     from cryptography.fernet import Fernet, InvalidToken
     from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
-    from cryptography.hazmat.backends import default_backend
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
     CRYPTO_AVAILABLE = True
 except ImportError:
     Fernet = None
     InvalidToken = None
-    PBKDF2 = None
+    PBKDF2HMAC = None
     hashes = None
-    default_backend = None
     CRYPTO_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -78,7 +76,7 @@ class EncryptionManager:
         """
         if not self.cipher:
             logger.warning("Encryption not available")
-            return data.encode() if isinstance(data, str) else data
+            return None
 
         try:
             encrypted = self.cipher.encrypt(data.encode() if isinstance(data, str) else data)
@@ -100,7 +98,7 @@ class EncryptionManager:
         """
         if not self.cipher:
             logger.warning("Encryption not available")
-            return encrypted_data.decode() if isinstance(encrypted_data, bytes) else encrypted_data
+            return None
 
         try:
             decrypted = self.cipher.decrypt(encrypted_data)
@@ -146,11 +144,14 @@ class EncryptionManager:
 
     def encrypt_file(self, input_path: str, output_path: str) -> bool:
         """Encrypt file contents."""
+        if not self.cipher:
+            logger.error("File encryption is unavailable")
+            return False
         try:
             with open(input_path, 'rb') as f:
                 data = f.read()
             
-            encrypted = self.cipher.encrypt(data) if self.cipher else data
+            encrypted = self.cipher.encrypt(data)
             
             with open(output_path, 'wb') as f:
                 f.write(encrypted)
@@ -163,11 +164,14 @@ class EncryptionManager:
 
     def decrypt_file(self, input_path: str, output_path: str) -> bool:
         """Decrypt file contents."""
+        if not self.cipher:
+            logger.error("File decryption is unavailable")
+            return False
         try:
             with open(input_path, 'rb') as f:
                 encrypted_data = f.read()
             
-            decrypted = self.cipher.decrypt(encrypted_data) if self.cipher else encrypted_data
+            decrypted = self.cipher.decrypt(encrypted_data)
             
             with open(output_path, 'wb') as f:
                 f.write(decrypted)
@@ -212,13 +216,12 @@ class PasswordHasher:
         Args:
             iterations: Number of PBKDF2 iterations
         """
-        if not CRYPTO_AVAILABLE or not PBKDF2:
+        if not CRYPTO_AVAILABLE or not PBKDF2HMAC:
             logger.warning("Cryptography library not available")
             self.iterations = iterations
             return
 
         self.iterations = iterations
-        self.backend = default_backend()
         logger.info(f"Password hasher initialized with {iterations} iterations")
 
     def hash_password(self, password: str, salt: Optional[bytes] = None) -> Tuple[str, str]:
@@ -232,8 +235,9 @@ class PasswordHasher:
         Returns:
             Tuple of (hash, salt) as base64 strings
         """
-        if not CRYPTO_AVAILABLE or not PBKDF2:
-            return base64.b64encode(password.encode()).decode(), "no_salt"
+        if not CRYPTO_AVAILABLE or not PBKDF2HMAC:
+            logger.error("Password hashing is unavailable")
+            return None, None
 
         try:
             if salt is None:
@@ -241,12 +245,11 @@ class PasswordHasher:
             else:
                 salt = base64.b64decode(salt)
 
-            kdf = PBKDF2(
+            kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
                 length=32,
                 salt=salt,
                 iterations=self.iterations,
-                backend=self.backend
             )
 
             hash_value = kdf.derive(password.encode())
@@ -268,8 +271,8 @@ class PasswordHasher:
         Returns:
             True if password matches, False otherwise
         """
-        if not CRYPTO_AVAILABLE or not PBKDF2:
-            return password == base64.b64decode(hash_value).decode()
+        if not CRYPTO_AVAILABLE or not PBKDF2HMAC:
+            return False
 
         try:
             computed_hash, _ = self.hash_password(password, salt)

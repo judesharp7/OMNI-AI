@@ -1298,3 +1298,237 @@ body {
         font-size: 22px;
     }
 }
+
+:focus-visible {
+    outline: 3px solid var(--neon-cyan);
+    outline-offset: 3px;
+}
+
+.status-badge.unavailable {
+    border-color: rgba(160, 160, 190, 0.6);
+    background: rgba(120, 120, 145, 0.12);
+    color: #b7b7c9;
+}
+
+.audit-scope {
+    color: #b7b7d1;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 8px 2px;
+}
+
+.voice-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.voice-input-group input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border: 1px solid var(--primary-purple);
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.3);
+    color: #e0e0ff;
+}
+
+.monitor-value {
+    margin: 18px 0 10px;
+    color: var(--neon-cyan);
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.monitor-card .stat-bar {
+    height: 10px;
+}
+
+.process-list p {
+    color: var(--neon-cyan);
+    margin-bottom: 8px;
+}
+
+.reduced-glow *,
+.reduced-glow *::before,
+.reduced-glow *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+}
+
+body.light-theme {
+    background: linear-gradient(135deg, #f3f4fb, #e8eaff 55%, #f8f7ff);
+    color: #24233a;
+}
+
+body.light-theme .header,
+body.light-theme .sidebar,
+body.light-theme .content-area,
+body.light-theme .right-panel .panel-card,
+body.light-theme .stat-card,
+body.light-theme .security-card,
+body.light-theme .monitor-card,
+body.light-theme .ai-card {
+    background: rgba(255, 255, 255, 0.88);
+    border-color: rgba(109, 84, 180, 0.32);
+    color: #24233a;
+}
+
+body.light-theme .section-header h2,
+body.light-theme .logo-text h1,
+body.light-theme .ai-card h3,
+body.light-theme .panel-card h3 {
+    color: #5030a5;
+    text-shadow: none;
+}
+
+body.light-theme .stat-content h3,
+body.light-theme .status-label,
+body.light-theme .activity-item .action,
+body.light-theme .security-content p,
+body.light-theme .ai-card p {
+    color: #55536b;
+}
+
+body.light-theme .input-group input,
+body.light-theme .ai-input input {
+    background: #fff;
+    color: #24233a;
+}
+
+body.light-theme .terminal-display,
+body.light-theme .terminal-input-group,
+body.light-theme .result-box {
+    background: #f9f8ff;
+    color: #33245c;
+}
+
+@media (max-width: 1024px) {
+    html,
+    body {
+        height: auto;
+        min-height: 100%;
+        overflow: auto;
+    }
+
+    .container {
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(60vh, auto);
+        overflow: visible;
+    }
+
+    .sidebar {
+        display: block;
+        position: sticky;
+        top: 8px;
+        z-index: 5;
+        padding: 8px;
+        overflow: hidden;
+    }
+
+    .nav-menu {
+        flex-direction: row;
+        gap: 8px;
+        padding: 0;
+        overflow-x: auto;
+    }
+
+    .nav-item {
+        flex: 0 0 auto;
+        gap: 8px;
+        padding: 10px 12px;
+        white-space: nowrap;
+    }
+
+    .sidebar-footer,
+    .right-panel {
+        display: none;
+    }
+
+    .content-area {
+        min-height: 60vh;
+    }
+}
+
+@media (max-width: 600px) {
+    .header {
+        padding: 12px 16px;
+    }
+
+    .logo-section {
+        gap: 10px;
+    }
+
+    .logo-glow {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+
+    .logo-text h1 {
+        font-size: 21px;
+    }
+
+    .tagline {
+        font-size: 10px;
+    }
+
+    .control-btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .main-grid {
+        padding: 10px;
+        gap: 10px;
+        grid-template-rows: auto minmax(65vh, auto);
+    }
+
+    .content-area {
+        padding: 18px 14px;
+        border-radius: 14px;
+    }
+
+    .section-header {
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+        font-size: 20px;
+    }
+
+    .stats-grid,
+    .security-container,
+    .ai-container,
+    .monitor-container {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .monitor-container {
+        gap: 12px;
+    }
+
+    .input-group {
+        flex-direction: column;
+    }
+
+    .voice-input-group {
+        flex-direction: column;
+    }
+}
