@@ -73,7 +73,11 @@ OMNI-AI/
 | POST | `/api/chat` | Send a message to the AI brain |
 | GET | `/api/status` | Brain availability |
 | GET | `/api/health` | Live CPU / memory / disk |
+| GET | `/api/monitor` | Process summary and system uptime |
 | GET | `/api/capabilities` | Installed feature flags |
+| POST | `/api/encrypt` | Encrypt text with Fernet |
+| POST | `/api/hash` | Hash a password with salted PBKDF2-HMAC-SHA256 |
+| POST | `/api/audit` | Check local application configuration |
 
 ### Example — chat with the brain
 
@@ -81,6 +85,17 @@ OMNI-AI/
 curl -X POST http://localhost:5000/api/chat \
      -H "Content-Type: application/json" \
      -d '{"message": "turn on the flashlight"}'
+```
+
+Encryption returns a recovery key with the ciphertext. Save that key separately;
+it is not stored by the application and cannot be recovered after it is lost.
+The configuration audit checks local app settings only. It is not a malware,
+penetration, or vulnerability scan.
+
+## 🧪 Tests
+
+```bat
+python -m unittest discover -s tests -v
 ```
 
 ---

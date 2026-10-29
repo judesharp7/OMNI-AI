@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Sensor Sentry — Fault Detection Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+/* ════════════════════════════════════════════
+   SENSOR SENTRY — FAULT DETECTION PLATFORM
+   Aesthetic: Oscilloscope meets terminal ops
+════════════════════════════════════════════ */
+:root{
+  --bg:#050709;
+  --surface:#090c10;
+  --panel:#0d1117;
+  --border:#162030;
+  --border2:#1e3050;
+  --cyan:#00e5ff;
+  --cg:rgba(0,229,255,.15);
+  --green:#39ff14;
+  --gg:rgba(57,255,20,.12);
+  --amber:#ffb300;
+  --ag:rgba(255,179,0,.12);
+  --red:#ff1744;
+  --rg:rgba(255,23,68,.14);
+  --purple:#d500f9;
+  --pg:rgba(213,0,249,.12);
+  --blue:#448aff;
+  --txt:#b0c4d8;
+  --txt2:#3d566e;
+  --txt3:#7a9ab5;
+  --font-mono:'Share Tech Mono',monospace;
+  --font-head:'Rajdhani',sans-serif;
+  --font-data:'Courier Prime',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{background:var(--bg);font-family:var(--font-mono);color:var(--txt);min-height:100vh;overflow-x:hidden;position:relative}
+/* phosphor crt effect */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 60%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:9998}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,229,255,.012) 3px,rgba(0,229,255,.012) 4px);pointer-events:none;z-index:9997}
+/* dot grid */
+.bg-grid{position:fixed;inset:0;background-image:radial-gradient(circle,rgba(0,229,255,.06) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
+
+/* ─── BOOT ─────────────────────────────── */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
+#boot.gone{display:none}
+.boot-logo{font-family:var(--font-head);font-size:38px;font-weight:700;letter-spacing:8px;color:var(--cyan);text-shadow:0 0 40px var(--cyan);margin-bottom:6px}
+.boot-sub{font-size:11px;letter-spacing:4px;color:var(--txt2);margin-bottom:36px}
+.boot-term{width:480px;height:160px;background:#000;border:1px solid var(--border2);padding:12px 16px;overflow:hidden;font-size:11px;line-height:1.7}
+.boot-line{color:var(--green)}
+.boot-line.ok::after{content:' [OK]';color:var(--cyan)}
+.boot-line.err::after{content:' [WARN]';color:var(--amber)}
+.boot-bar-wrap{width:480px;height:2px;background:var(--border);margin-top:12px}
+.boot-bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));width:0%;transition:width .15s;box-shadow:0 0 10px var(--cyan)}
+.boot-pct{font-size:10px;color:var(--txt2);margin-top:6px;letter-spacing:2px}
+
+/* ─── ALERTS ───────────────────────────── */
+#toasts{position:fixed;top:68px;right:16px;z-index:9000;display:flex;flex-direction:column;gap:6px;width:320px}
+.toast{border-radius:3px;padding:10px 14px;border-left:3px solid var(--red);background:rgba(255,23,68,.1);backdrop-filter:blur(10px);animation:tslide .3s ease;position:relative;overflow:hidden}
+.toast::after{content:'';position:absolute;bottom:0;left:0;height:1px;background:var(--red);animation:tshrink 6s linear forwards}
+.toast.warn{border-color:var(--amber);background:rgba(255,179,0,.09)}
+.toast.warn::after{background:var(--amber)}
+.toast.info{border-color:var(--cyan);background:rgba(0,229,255,.07)}
+.toast.info::after{background:var(--cyan)}
+.t-code{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--red);margin-bottom:3px}
+.toast.warn .t-code{color:var(--amber)}
+.toast.info .t-code{color:var(--cyan)}
+.t-msg{font-size:10px;color:var(--txt3);line-height:1.5}
+.t-domain{font-size:8px;color:var(--txt2);margin-top:3px;letter-spacing:1px}
+
+/* ─── HEADER ───────────────────────────── */
+header{position:sticky;top:0;z-index:500;height:58px;background:rgba(5,7,9,.97);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:24px;backdrop-filter:blur(20px)}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-icon{width:32px;height:32px;border:2px solid var(--cyan);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--cyan);box-shadow:0 0 12px var(--cg);animation:hdr-pulse 3s ease infinite}
+.hdr-name{font-family:var(--font-head);font-size:18px;font-weight:700;letter-spacing:3px;color:var(--cyan)}
+.hdr-ver{font-size:8px;color:var(--txt2);letter-spacing:2px;display:block;margin-top:-2px}
+.hdr-sep{width:1px;height:32px;background:var(--border2)}
+.hdr-clock{font-family:var(--font-data);font-size:20px;letter-spacing:4px;color:var(--txt)}
+.hdr-date{font-size:8px;color:var(--txt2);letter-spacing:2px;text-align:center;margin-top:2px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+.hdr-kpi{text-align:center}
+.hdr-kpi-val{font-family:var(--font-head);font-size:18px;font-weight:700;line-height:1}
+.hdr-kpi-lbl{font-size:8px;color:var(--txt2);letter-spacing:1.5px}
+.status-badge{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:2px;font-size:9px;letter-spacing:2px;font-weight:600}
+.sb-live{border:1px solid var(--green);color:var(--green);background:var(--gg)}
+.sb-pause{border:1px solid var(--amber);color:var(--amber);background:var(--ag)}
+.dot{width:6px;height:6px;border-radius:50%;animation:dot-blink 1.5s ease infinite}
+.dot-g{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot-a{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.hdr-btn{background:none;border:1px solid var(--border2);color:var(--txt3);font-family:var(--font-mono);font-size:9px;padding:5px 12px;cursor:pointer;letter-spacing:1px;transition:all .2s;border-radius:2px}
+.hdr-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* ─── TABS ─────────────────────────────── */
+.tabs-bar{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:58px;z-index:400}
+.tab{padding:10px 28px;font-family:var(--font-head);font-size:12px;letter-spacing:3px;font-weight:600;color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:8px;user-select:none}
+.tab:hover{color:var(--txt)}
+.tab.active-mcu{color:var(--cyan);border-color:var(--cyan);background:rgba(0,229,255,.04)}
+.tab.active-chip{color:var(--purple);border-color:var(--purple);background:rgba(213,0,249,.04)}
+.tab.active-iot{color:var(--green);border-color:var(--green);background:rgba(57,255,20,.04)}
+.tab-badge{font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--font-mono);font-weight:400}
+.badge-r{background:var(--rg);color:var(--red);border:1px solid var(--red)}
+.badge-a{background:var(--ag);color:var(--amber);border:1px solid var(--amber)}
+.badge-g{background:var(--gg);color:var(--green);border:1px solid var(--green)}
+
+/* ─── LAYOUT ───────────────────────────── */
+.page{position:relative;z-index:1;padding:16px 20px;display:flex;flex-direction:column;gap:14px;max-width:1700px;margin:0 auto}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.015)}
+.pt{font-family:var(--font-head);font-size:11px;letter-spacing:3px;font-weight:600;color:var(--txt3);display:flex;align-items:center;gap:8px}
+.pt::before{content:'▶';font-size:7px;opacity:.5}
+.row{display:flex;gap:14px}
+.col{display:flex;flex-direction:column;gap:14px}
+
+/* ─── METRIC CARDS ─────────────────────── */
+.metrics-row{display:grid;gap:10px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.mc::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--cyan);opacity:.3;transition:opacity .3s,background .3s}
+.mc.fault-crit{border-color:var(--red);box-shadow:0 0 16px rgba(255,23,68,.18);animation:fault-flash .4s ease}
+.mc.fault-crit::after{background:var(--red);opacity:1}
+.mc.fault-warn{border-color:var(--amber);box-shadow:0 0 12px rgba(255,179,0,.12)}
+.mc.fault-warn::after{background:var(--amber);opacity:.8}
+.mc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.mc-id{font-size:8px;letter-spacing:2px;color:var(--txt2);font-weight:600}
+.mc-dot{width:7px;height:7px;border-radius:50%;transition:all .3s}
+.dot-ok{background:var(--green);box-shadow:0 0 5px var(--green)}
+.dot-warn{background:var(--amber);box-shadow:0 0 5px var(--amber)}
+.dot-crit{background:var(--red);box-shadow:0 0 7px var(--red);animation:dot-blink .5s infinite}
+.mc-val{font-family:var(--font-head);font-size:24px;font-weight:700;line-height:1;transition:color .3s}
+.mc-val.cyan{color:var(--cyan)}
+.mc-val.green{color:var(--green)}
+.mc-val.amber{color:var(--amber)}
+.mc-val.red{color:var(--red);text-shadow:0 0 12px var(--rg)}
+.mc-unit{font-size:9px;color:var(--txt2);letter-spacing:1px}
+.mc-name{font-size:9px;color:var(--txt3);margin-bottom:6px}
+.mc-spark{width:100%;height:28px}
+.mc-sub{font-size:8px;color:var(--txt2);margin-top:4px;letter-spacing:.5px}
+.mc-sub .zv{color:var(--cyan);font-weight:600}
+.mc-sub .zv.warn{color:var(--amber)}
+.mc-sub .zv.crit{color:var(--red)}
+
+/* ─── FAULT PANEL ──────────────────────── */
+.fault-list{padding:8px;height:100%;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.fault-entry{padding:9px 10px;margin-bottom:6px;border-radius:3px;border-left:3px solid;animation:fi-slide .25s ease}
+.fe-crit{border-color:var(--red);background:rgba(255,23,68,.07)}
+.fe-warn{border-color:var(--amber);background:rgba(255,179,0,.06)}
+.fe-info{border-color:var(--cyan);background:rgba(0,229,255,.05)}
+.fe-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.fe-code{font-size:9px;font-weight:700;letter-spacing:1.5px}
+.fe-crit .fe-code{color:var(--red)}
+.fe-warn .fe-code{color:var(--amber)}
+.fe-info .fe-code{color:var(--cyan)}
+.fe-time{font-size:8px;color:var(--txt2)}
+.fe-desc{font-size:10px;color:var(--txt3);line-height:1.5;margin-bottom:3px}
+.fe-action{font-size:8px;color:var(--txt2);letter-spacing:.5px;font-style:italic}
+.fault-empty{font-size:10px;color:var(--txt2);text-align:center;padding:20px;letter-spacing:1px}
+
+/* ─── WAVEFORM CHART ───────────────────── */
+.wave-canvas{display:block;width:100%}
+
+/* ─── MCU SPECIFIC ─────────────────────── */
+.register-map{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:14px}
+.reg-cell{aspect-ratio:1;background:var(--surface);border:1px solid var(--border);border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;transition:all .3s;cursor:default}
+.reg-cell.ok{border-color:rgba(0,229,255,.3);color:var(--cyan)}
+.reg-cell.error{background:var(--rg);border-color:var(--red);color:var(--red);animation:reg-blink .6s infinite}
+.reg-cell.suspect{background:var(--ag);border-color:var(--amber);color:var(--amber)}
+.reg-addr{font-size:7px;color:var(--txt2)}
+
+/* ─── CHIP SPECIFIC ────────────────────── */
+.chip-diagram{padding:14px;display:flex;gap:14px;align-items:flex-start}
+.chip-die{flex:0 0 220px;height:220px;background:var(--surface);border:2px solid var(--border2);border-radius:4px;position:relative;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:3px;padding:12px}
+.die-block{border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;letter-spacing:.5px;transition:all .4s;border:1px solid transparent;text-align:center}
+.die-ok{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.2);color:var(--cyan)}
+.die-warn{background:var(--ag);border-color:var(--amber);color:var(--amber)}
+.die-fail{background:var(--rg);border-color:var(--red);color:var(--red);animation:die-pulse .7s ease infinite}
+.die-label{font-size:7px}
+.chip-stats{flex:1;display:flex;flex-direction:column;gap:8px}
+.cstat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:3px}
+.cstat-name{font-size:9px;color:var(--txt3);letter-spacing:.5px}
+.cstat-bar{flex:0 0 120px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.cstat-fill{height:100%;border-radius:3px;transition:width .5s,background .4s}
+.cstat-val{font-size:10px;font-weight:600;min-width:50px;text-align:right}
+.cstat-ok .cstat-val{color:var(--green)}
+.cstat-warn .cstat-val{color:var(--amber)}
+.cstat-crit .cstat-val{color:var(--red)}
+
+/* ─── IoT SPECIFIC ─────────────────────── */
+.topology{padding:14px;position:relative}
+.topo-canvas{width:100%;display:block}
+.iot-devices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px}
+.dev-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:10px;transition:all .3s}
+.dev-card.ok{border-color:rgba(57,255,20,.3)}
+.dev-card.warn{border-color:rgba(255,179,0,.4)}
+.dev-card.lost{border-color:rgba(255,23,68,.4);background:rgba(255,23,68,.04)}
+.dev-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.dev-id{font-family:var(--font-head);font-size:12px;font-weight:700;letter-spacing:2px}
+.dev-status{font-size:8px;padding:2px 7px;border-radius:10px}
+.ds-ok{background:var(--gg);color:var(--green);border:1px solid var(--green)}
+.ds-warn{background:var(--ag);color:var(--amber);border:1px solid var(--amber)}
+.ds-lost{background:var(--rg);color:var(--red);border:1px solid var(--red)}
+.dev-metrics{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.dm{display:flex;flex-direction:column}
+.dm-lbl{font-size:7px;color:var(--txt2);letter-spacing:1px}
+.dm-val{font-size:12px;font-family:var(--font-head);font-weight:600;line-height:1.2}
+.rssi-bar{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.rssi-fill{height:100%;border-radius:2px;transition:width .5s}
+
+/* ─── MISC ─────────────────────────────── */
+.flex-row{display:flex;gap:14px}
+.clear-btn{background:none;border:1px solid var(--border2);color:var(--txt2);font-family:var(--font-mono);font-size:8px;padding:3px 10px;cursor:pointer;letter-spacing:1px;border-radius:2px;transition:all .2s}
+.clear-btn:hover{border-color:var(--red);color:var(--red)}
+.sub-label{font-size:8px;color:var(--txt2);letter-spacing:1px;padding:6px 14px;border-top:1px solid var(--border);display:flex;justify-content:space-between}
+.domain-tag{font-size:8px;padding:2px 8px;border-radius:2px;letter-spacing:1.5px;font-weight:600}
+.tag-mcu{background:var(--cg);color:var(--cyan);border:1px solid var(--cyan)}
+.tag-chip{background:var(--pg);color:var(--purple);border:1px solid var(--purple)}
+.tag-iot{background:var(--gg);color:var(--green);border:1px solid var(--green)}
+
+/* ─── ANIMATIONS ───────────────────────── */
+@keyframes hdr-pulse{0%,100%{box-shadow:0 0 12px var(--cg)}50%{box-shadow:0 0 25px var(--cyan)}}
+@keyframes dot-blink{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes fault-flash{0%{background:rgba(255,23,68,.25)}100%{background:var(--panel)}}
+@keyframes reg-blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes die-pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes tslide{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fi-slide{from{transform:translateX(-8px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tshrink{from{width:100%}to{width:0%}}
+@keyframes fade-out{to{opacity:0;transform:translateX(15px)}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- ══ BOOT ═══════════════════════════════ -->
+<div id="boot">
+  <div class="boot-logo">SENSOR SENTRY</div>
+  <div class="boot-sub">FAULT DETECTION PLATFORM v2.0</div>
+  <div class="boot-term" id="boot-term"></div>
+  <div class="boot-bar-wrap"><div class="boot-bar" id="boot-bar"></div></div>
+  <div class="boot-pct" id="boot-pct">0%</div>
+</div>
+
+<!-- ══ TOASTS ══════════════════════════════ -->
+<div id="toasts"></div>
+
+<!-- ══ HEADER ══════════════════════════════ -->
+<header>
+  <div class="hdr-logo">
+    <div class="hdr-icon">⚡</div>
+    <div>
+      <span class="hdr-name">SENSOR SENTRY</span>
+      <span class="hdr-ver">FAULT DETECTION PLATFORM</span>
+    </div>
+  </div>
+  <div class="hdr-sep"></div>
+  <div>
+    <div class="hdr-clock" id="hclock">00:00:00</div>
+    <div class="hdr-date" id="hdate">---</div>
+  </div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-right">
+    <div class="hdr-kpi"><div class="hdr-kpi-val" id="h-mcu-faults" style="color:var(--cyan)">0</div><div class="hdr-kpi-lbl">MCU FAULTS</div></div>
+    <div class="hdr-kpi"><div class="hdr-kpi-val" id="h-chip-faults" style="color:var(--purple)">0</div><div class="hdr-kpi-lbl">CHIP FAULTS</div></div>
+    <div class="hdr-kpi"><div class="hdr-kpi-val" id="h-iot-faults" style="color:var(--green)">0</div><div class="hdr-kpi-lbl">IoT FAULTS</div></div>
+    <div class="hdr-kpi"><div class="hdr-kpi-val" id="h-total" style="color:var(--red)">0</div><div class="hdr-kpi-lbl">TOTAL</div></div>
+    <div class="status-badge sb-live" id="status-badge"><span class="dot dot-g"></span><span id="status-txt">MONITORING</span></div>
+    <button class="hdr-btn" onclick="togglePause()" id="pause-btn">⏸ PAUSE</button>
+  </div>
+</header>
+
+<!-- ══ TABS ════════════════════════════════ -->
+<div class="tabs-bar">
+  <div class="tab active-mcu" id="tab-mcu" onclick="switchTab('mcu')">⚙ MICROPROCESSOR <span class="tab-badge badge-r" id="tb-mcu">0</span></div>
+  <div class="tab" id="tab-chip" onclick="switchTab('chip')">◈ CHIP DIAGNOSTICS <span class="tab-badge badge-r" id="tb-chip">0</span></div>
+  <div class="tab" id="tab-iot" onclick="switchTab('iot')">◉ IoT CONNECTIONS <span class="tab-badge badge-r" id="tb-iot">0</span></div>
+</div>
+
+<!-- ══ CONTENT ═══════════════════════════════════════════ -->
+<div class="page">
+
+  <!-- ════ MCU TAB ════ -->
+  <div class="tab-content active" id="content-mcu">
+    <div class="flex-row" style="margin-bottom:14px">
+      <!-- Metrics -->
+      <div style="flex:1">
+        <div class="panel">
+          <div class="ph">
+            <span class="pt">MICROPROCESSOR HEALTH MONITORS</span>
+            <span class="domain-tag tag-mcu">MCU</span>
+          </div>
+          <div class="metrics-row" id="mcu-cards" style="grid-template-columns:repeat(4,1fr);padding:10px;gap:10px"></div>
+        </div>
+      </div>
+      <!-- Fault log -->
+      <div style="flex:0 0 300px">
+        <div class="panel" style="height:100%">
+          <div class="ph"><span class="pt">MCU FAULT LOG</span><button class="clear-btn" onclick="clearFaults('mcu')">CLEAR</button></div>
+          <div class="fault-list" id="mcu-faults" style="height:224px"><div class="fault-empty">No faults detected</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waveform row -->
+    <div class="flex-row">
+      <!-- Waveform -->
+      <div class="panel" style="flex:1">
+        <div class="ph">
+          <span class="pt">SIGNAL WAVEFORM MONITOR</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <select id="mcu-wave-sel" onchange="mcuWaveSel=+this.value;mcuWaveData=[]" style="background:var(--surface);border:1px solid var(--border2);color:var(--txt3);font-family:var(--font-mono);font-size:9px;padding:3px 7px;border-radius:2px;outline:none">
+              <option value="0">VCORE — 1.2V Rail</option>
+              <option value="1">VDD — 3.3V Rail</option>
+              <option value="2">CPU Temp (Tj)</option>
+              <option value="3">Clock Drift (ppm)</option>
+              <option value="4">Power Draw (mW)</option>
+              <option value="5">Cache Errors/s</option>
+              <option value="6">IRQ Storm Count</option>
+              <option value="7">Pipeline Stalls</option>
+            </select>
+          </div>
+        </div>
+        <canvas id="mcu-wave" class="wave-canvas" height="150"></canvas>
+        <div class="sub-label"><span id="mcu-wave-stats">MEAN: — | STD: — | Z: —</span><span id="mcu-wave-range">WINDOW: 80 pts</span></div>
+      </div>
+      <!-- Register map -->
+      <div class="panel" style="flex:0 0 320px">
+        <div class="ph"><span class="pt">REGISTER INTEGRITY MAP</span><span style="font-size:8px;color:var(--txt2)" id="reg-summary">32/32 OK</span></div>
+        <div class="register-map" id="reg-map" style="grid-template-columns:repeat(8,1fr)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ CHIP TAB ════ -->
+  <div class="tab-content" id="content-chip">
+    <div class="flex-row" style="margin-bottom:14px">
+      <div style="flex:1">
+        <div class="panel">
+          <div class="ph"><span class="pt">CHIP SUBSYSTEM MONITORS</span><span class="domain-tag tag-chip">CHIP</span></div>
+          <div class="metrics-row" id="chip-cards" style="grid-template-columns:repeat(4,1fr);padding:10px;gap:10px"></div>
+        </div>
+      </div>
+      <div style="flex:0 0 300px">
+        <div class="panel" style="height:100%">
+          <div class="ph"><span class="pt">CHIP FAULT LOG</span><button class="clear-btn" onclick="clearFaults('chip')">CLEAR</button></div>
+          <div class="fault-list" id="chip-faults" style="height:224px"><div class="fault-empty">No faults detected</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex-row">
+      <!-- Chip waveform -->
+      <div class="panel" style="flex:1">
+        <div class="ph">
+          <span class="pt">CHIP SIGNAL MONITOR</span>
+          <select id="chip-wave-sel" onchange="chipWaveSel=+this.value;chipWaveData=[]" style="background:var(--surface);border:1px solid var(--border2);color:var(--txt3);font-family:var(--font-mono);font-size:9px;padding:3px 7px;border-radius:2px;outline:none">
+            <option value="0">SRAM Parity Errors/s</option>
+            <option value="1">Flash Wear Level (%)</option>
+            <option value="2">ADC Linearity (LSB)</option>
+            <option value="3">DAC Drift (mV)</option>
+            <option value="4">SPI Bus Errors/s</option>
+            <option value="5">I2C NACK Rate (%)</option>
+            <option value="6">Watchdog Resets</option>
+            <option value="7">ECC Corrections/s</option>
+          </select>
+        </div>
+        <canvas id="chip-wave" class="wave-canvas" height="150"></canvas>
+        <div class="sub-label"><span id="chip-wave-stats">MEAN: — | STD: — | Z: —</span><span>WINDOW: 80 pts</span></div>
+      </div>
+      <!-- Die diagram -->
+      <div class="panel" style="flex:0 0 460px">
+        <div class="ph"><span class="pt">SILICON DIE HEALTH MAP</span><span style="font-size:8px;color:var(--txt2)" id="die-summary">ALL BLOCKS NOMINAL</span></div>
+        <div class="chip-diagram">
+          <div class="chip-die" id="chip-die"></div>
+          <div class="chip-stats" id="chip-stats-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ IoT TAB ════ -->
+  <div class="tab-content" id="content-iot">
+    <div class="flex-row" style="margin-bottom:14px">
+      <div style="flex:1">
+        <div class="panel">
+          <div class="ph"><span class="pt">IoT DEVICE NETWORK</span><span class="domain-tag tag-iot">IoT</span></div>
+          <div id="iot-devices" class="iot-devices"></div>
+        </div>
+      </div>
+      <div style="flex:0 0 300px">
+        <div class="panel" style="height:100%">
+          <div class="ph"><span class="pt">IoT FAULT LOG</span><button class="clear-btn" onclick="clearFaults('iot')">CLEAR</button></div>
+          <div class="fault-list" id="iot-faults" style="height:290px"><div class="fault-empty">No faults detected</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex-row">
+      <!-- IoT waveform -->
+      <div class="panel" style="flex:1">
+        <div class="ph">
+          <span class="pt">NETWORK SIGNAL MONITOR</span>
+          <select id="iot-wave-sel" onchange="iotWaveSel=+this.value;iotWaveData=[]" style="background:var(--surface);border:1px solid var(--border2);color:var(--txt3);font-family:var(--font-mono);font-size:9px;padding:3px 7px;border-radius:2px;outline:none">
+            <option value="0">MQTT Latency (ms)</option>
+            <option value="1">Packet Loss (%)</option>
+            <option value="2">RSSI avg (dBm)</option>
+            <option value="3">TCP Reconnects/min</option>
+            <option value="4">CRC Errors/s</option>
+            <option value="5">TLS Handshake (ms)</option>
+            <option value="6">Jitter (ms)</option>
+            <option value="7">Bandwidth Util (%)</option>
+          </select>
+        </div>
+        <canvas id="iot-wave" class="wave-canvas" height="150"></canvas>
+        <div class="sub-label"><span id="iot-wave-stats">MEAN: — | STD: — | Z: —</span><span>WINDOW: 80 pts</span></div>
+      </div>
+      <!-- Network topology -->
+      <div class="panel" style="flex:0 0 420px">
+        <div class="ph"><span class="pt">NETWORK TOPOLOGY MAP</span><span style="font-size:8px;color:var(--txt2)" id="topo-summary">GATEWAY NOMINAL</span></div>
+        <canvas id="topo-canvas" height="190" style="display:block;width:100%;padding:10px"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+// SENSOR SENTRY — FAULT DETECTION ENGINE
+// ══════════════════════════════════════════════════════════
+'use strict';
+
+// ── MCU SENSORS ──────────────────────────────────────────
+const MCU_SENSORS = [
+  { id:'VCORE', name:'Core Voltage Rail',      unit:'V',    base:1.200, noise:.008, spike:.12,  color:'#00e5ff', decimals:3,
+    faults:[
+      {code:'VOLT_SAG',     level:'crit', desc:'Core voltage below safe threshold — possible power rail collapse',        action:'Check PSU output, inspect decoupling caps',     zThr:2.8},
+      {code:'VOLT_SPIKE',   level:'crit', desc:'Voltage transient detected — risk of gate oxide damage',                  action:'Inspect bypass capacitors, check load step',    zThr:2.8},
+      {code:'VOLT_RIPPLE',  level:'warn', desc:'Excessive ripple on VCORE rail — noise coupling risk',                    action:'Measure PSU ripple, add bulk capacitance',      zThr:2.0},
+    ]},
+  { id:'VDD33', name:'VDD 3.3V Supply',         unit:'V',    base:3.300, noise:.015, spike:.28,  color:'#39ff14', decimals:3,
+    faults:[
+      {code:'VDD_DROPOUT',  level:'crit', desc:'VDD supply near LDO dropout — peripheral brown-out risk',                 action:'Verify input voltage, check LDO thermal',       zThr:2.8},
+      {code:'VDD_NOISE',    level:'warn', desc:'High-frequency noise on VDD — ADC/DAC accuracy degraded',                 action:'Add pi-filter, separate analog/digital ground', zThr:2.0},
+    ]},
+  { id:'TJ',    name:'Junction Temperature',    unit:'°C',   base:68,    noise:3,    spike:28,   color:'#ff6d00', decimals:1,
+    faults:[
+      {code:'THERMAL_RUNAWAY',level:'crit',desc:'Tj approaching maximum rating — thermal shutdown imminent',              action:'Check heatsink contact, reduce clock, add cooling',zThr:2.5},
+      {code:'THERMAL_WARN',  level:'warn', desc:'Temperature above sustained operating range',                             action:'Improve airflow, check thermal paste',           zThr:1.8},
+    ]},
+  { id:'CLK',   name:'Clock Drift (ppm)',        unit:'ppm',  base:0,     noise:1.5,  spike:22,   color:'#d500f9', decimals:2,
+    faults:[
+      {code:'CLOCK_DRIFT',  level:'crit', desc:'PLL lock lost — clock frequency deviation exceeds ±10 ppm',              action:'Check crystal load caps, inspect PCB layout',   zThr:2.6},
+      {code:'CLOCK_JITTER', level:'warn', desc:'Clock jitter elevated — timing margin violated',                          action:'Inspect ground plane, check EMI sources',       zThr:1.9},
+    ]},
+  { id:'PWR',   name:'Core Power Draw',          unit:'mW',   base:420,   noise:25,   spike:310,  color:'#448aff', decimals:0,
+    faults:[
+      {code:'POWER_BURST',  level:'crit', desc:'Abnormal power spike — possible short circuit or latch-up',               action:'Profile interrupt handlers, check for latch-up', zThr:2.7},
+      {code:'POWER_HIGH',   level:'warn', desc:'Sustained power above nominal — clock throttling may engage',              action:'Reduce peripheral activity, check idle modes',  zThr:2.0},
+    ]},
+  { id:'CACHE', name:'Cache Error Rate',          unit:'err/s',base:0,     noise:.4,   spike:12,   color:'#ff1744', decimals:1,
+    faults:[
+      {code:'CACHE_CORRUPT',level:'crit', desc:'L1/L2 cache parity error — data integrity compromised',                   action:'Run ECC scrubbing, check memory voltage',       zThr:2.5},
+      {code:'CACHE_HIT_LOW',level:'warn', desc:'Cache miss rate elevated — performance degradation',                       action:'Profile memory access patterns',                zThr:1.8},
+    ]},
+  { id:'IRQ',   name:'IRQ Storm Counter',         unit:'/s',   base:200,   noise:40,   spike:1800, color:'#ffb300', decimals:0,
+    faults:[
+      {code:'IRQ_STORM',    level:'crit', desc:'Interrupt storm detected — CPU starved, watchdog risk',                   action:'Disable spurious interrupt source, check drivers',zThr:2.6},
+      {code:'IRQ_HIGH',     level:'warn', desc:'IRQ rate elevated — latency impact on real-time tasks',                   action:'Profile interrupt sources, coalesce handlers',  zThr:1.9},
+    ]},
+  { id:'STALL', name:'Pipeline Stalls',           unit:'%',    base:4,     noise:1.5,  spike:38,   color:'#00bfa5', decimals:1,
+    faults:[
+      {code:'PIPE_STALL',   level:'crit', desc:'Pipeline stall rate critical — branch misprediction storm',               action:'Check branch predictor tables, optimize loops',  zThr:2.7},
+      {code:'PIPE_WARN',    level:'warn', desc:'Pipeline efficiency below nominal',                                        action:'Review hot path assembly, check memory latency', zThr:2.0},
+    ]},
+];
+
+// ── CHIP SENSORS ─────────────────────────────────────────
+const CHIP_SENSORS = [
+  { id:'SRAM', name:'SRAM Parity Errors',  unit:'err/s', base:0,   noise:.3,  spike:18,  color:'#00e5ff', decimals:1,
+    faults:[
+      {code:'SRAM_PARITY',  level:'crit', desc:'SRAM parity error — single/multi-bit flip detected in data memory',      action:'Run ECC correction, check supply noise',         zThr:2.5},
+      {code:'SRAM_SOFT_ERR',level:'warn', desc:'Soft error rate elevated — possible radiation or EMI event',              action:'Implement EDAC, shield from EMI',                zThr:1.8},
+    ]},
+  { id:'FLASH',name:'Flash Wear Level',    unit:'%',     base:88,  noise:1,   spike:-18, color:'#39ff14', decimals:1,
+    faults:[
+      {code:'FLASH_ENDURE', level:'crit', desc:'Flash endurance critically low — write operations may fail',              action:'Implement wear leveling, migrate to new block',  zThr:2.5},
+      {code:'FLASH_WARN',   level:'warn', desc:'Flash wear approaching threshold — monitor write cycles',                  action:'Reduce write frequency, enable wear leveling',   zThr:1.8},
+    ]},
+  { id:'ADC',  name:'ADC Linearity (LSB)', unit:'LSB',   base:0,   noise:.5,  spike:7.5, color:'#d500f9', decimals:2,
+    faults:[
+      {code:'ADC_NONLIN',   level:'crit', desc:'ADC nonlinearity exceeds spec — conversion results unreliable',            action:'Recalibrate ADC, check reference voltage',       zThr:2.6},
+      {code:'ADC_DRIFT',    level:'warn', desc:'ADC linearity drift detected — reference instability likely',              action:'Check VREF stability, temperature compensation', zThr:1.9},
+    ]},
+  { id:'DAC',  name:'DAC Output Drift',    unit:'mV',    base:0,   noise:.8,  spike:14,  color:'#ff6d00', decimals:2,
+    faults:[
+      {code:'DAC_GLITCH',   level:'crit', desc:'DAC code-to-code glitch exceeds limit — output corrupted',                action:'Add output filter, check settling time',         zThr:2.7},
+      {code:'DAC_DRIFT',    level:'warn', desc:'DAC offset drift out of spec — temperature effect likely',                 action:'Apply offset correction, check Vref temp coeff', zThr:2.0},
+    ]},
+  { id:'SPI',  name:'SPI Bus Errors/s',   unit:'err/s', base:0,   noise:.4,  spike:22,  color:'#448aff', decimals:1,
+    faults:[
+      {code:'SPI_FRAME_ERR',level:'crit', desc:'SPI framing error — CLK/CS timing violation or bus contention',           action:'Check CLK phase/polarity, inspect CS timing',    zThr:2.5},
+      {code:'SPI_CRC_FAIL', level:'warn', desc:'SPI CRC failures elevated — data corruption in transit',                  action:'Reduce clock speed, check signal integrity',     zThr:1.9},
+    ]},
+  { id:'I2C',  name:'I2C NACK Rate',       unit:'%',     base:0.2, noise:.15, spike:18,  color:'#ff1744', decimals:2,
+    faults:[
+      {code:'I2C_NACK',     level:'crit', desc:'I2C NACK storm — device not responding, possible bus lockup',             action:'Reset I2C master, check device addresses',       zThr:2.6},
+      {code:'I2C_SLOW',     level:'warn', desc:'I2C stretched clocks excessively — peripheral lagging',                   action:'Check slave device load, reduce bus speed',      zThr:1.8},
+    ]},
+  { id:'WDT',  name:'Watchdog Resets',     unit:'#',     base:0,   noise:.2,  spike:8,   color:'#ffb300', decimals:0,
+    faults:[
+      {code:'WDT_RESET',    level:'crit', desc:'Watchdog reset event — firmware hung or missed kick deadline',            action:'Profile main loop timing, check blocking calls', zThr:2.4},
+      {code:'WDT_MARGINAL', level:'warn', desc:'Watchdog kick timing marginal — system near reset threshold',             action:'Optimize ISR latency, check for priority inversion',zThr:1.7},
+    ]},
+  { id:'ECC',  name:'ECC Corrections/s',  unit:'corr/s',base:0,   noise:.3,  spike:14,  color:'#00bfa5', decimals:1,
+    faults:[
+      {code:'ECC_MULTI_BIT',level:'crit', desc:'Multi-bit ECC error — uncorrectable data corruption in memory',           action:'Replace affected memory, check power supply',    zThr:2.5},
+      {code:'ECC_HIGH_RATE',level:'warn', desc:'Single-bit ECC correction rate elevated — memory degradation',            action:'Monitor closely, schedule memory diagnostic',    zThr:1.8},
+    ]},
+];
+
+// ── IoT DEVICES ──────────────────────────────────────────
+const IOT_DEVICES = [
+  { id:'NODE-A1', type:'MQTT Sensor',   ip:'10.0.1.11', color:'#00e5ff',
+    metrics:[
+      {id:'LATENCY', name:'MQTT Latency',  unit:'ms',  base:45,  noise:12,  spike:380, color:'#00e5ff', decimals:0,
+        faults:[{code:'MQTT_TIMEOUT',level:'crit',desc:'MQTT broker timeout — connection lost or broker overloaded',action:'Check broker health, inspect network path',zThr:2.5},{code:'MQTT_LAG',level:'warn',desc:'MQTT publish latency elevated — QoS backlog building',action:'Reduce publish rate, check broker queue',zThr:1.9}]},
+      {id:'LOSS',    name:'Packet Loss',   unit:'%',   base:0.2, noise:.15, spike:28,  color:'#ff1744', decimals:1,
+        faults:[{code:'PKT_LOSS_CRIT',level:'crit',desc:'Packet loss >15% — critical data dropout in telemetry stream',action:'Check RF channel, inspect cable/antenna',zThr:2.6},{code:'PKT_LOSS_WARN',level:'warn',desc:'Packet loss elevated — potential retransmission storm',action:'Monitor link quality, check interference',zThr:1.9}]},
+      {id:'RSSI',    name:'RSSI Signal',   unit:'dBm', base:-58, noise:4,   spike:-32, color:'#39ff14', decimals:1,
+        faults:[{code:'SIGNAL_LOSS',level:'crit',desc:'RSSI below -80 dBm — link on verge of dropout',action:'Check antenna position, reduce distance to AP',zThr:2.5},{code:'SIGNAL_WEAK',level:'warn',desc:'Signal strength degraded — interference likely',action:'Survey RF environment, change channel',zThr:1.8}]},
+    ]},
+  { id:'NODE-B2', type:'Modbus Gateway', ip:'10.0.1.12', color:'#d500f9',
+    metrics:[
+      {id:'LATENCY', name:'MQTT Latency',  unit:'ms',  base:38,  noise:8,   spike:320, color:'#d500f9', decimals:0,
+        faults:[{code:'MQTT_TIMEOUT',level:'crit',desc:'MQTT broker timeout — connection lost',action:'Check broker health',zThr:2.5},{code:'MQTT_LAG',level:'warn',desc:'Latency elevated',action:'Reduce publish rate',zThr:1.9}]},
+      {id:'LOSS',    name:'Packet Loss',   unit:'%',   base:0.1, noise:.1,  spike:22,  color:'#ff6d00', decimals:1,
+        faults:[{code:'PKT_LOSS_CRIT',level:'crit',desc:'Critical packet loss on Modbus gateway',action:'Check Modbus wiring, RS485 termination',zThr:2.6},{code:'PKT_LOSS_WARN',level:'warn',desc:'Packet loss detected',action:'Check line quality',zThr:1.9}]},
+      {id:'RSSI',    name:'RSSI Signal',   unit:'dBm', base:-62, noise:5,   spike:-30, color:'#00bfa5', decimals:1,
+        faults:[{code:'SIGNAL_LOSS',level:'crit',desc:'RSSI critical — Modbus gateway losing connectivity',action:'Check WiFi adapter, inspect environment',zThr:2.5},{code:'SIGNAL_WEAK',level:'warn',desc:'Signal degraded',action:'Improve AP placement',zThr:1.8}]},
+    ]},
+  { id:'NODE-C3', type:'BLE Bridge',    ip:'10.0.1.13', color:'#ff6d00',
+    metrics:[
+      {id:'LATENCY', name:'BLE Latency',   unit:'ms',  base:12,  noise:5,   spike:180, color:'#ff6d00', decimals:0,
+        faults:[{code:'BLE_CONN_DROP',level:'crit',desc:'BLE connection dropout — peripheral out of range or pairing lost',action:'Reset BLE stack, re-pair device',zThr:2.5},{code:'BLE_LAG',level:'warn',desc:'BLE connection interval stretched',action:'Reduce connection interval',zThr:1.9}]},
+      {id:'LOSS',    name:'Packet Loss',   unit:'%',   base:0.5, noise:.2,  spike:35,  color:'#ff1744', decimals:1,
+        faults:[{code:'PKT_LOSS_CRIT',level:'crit',desc:'BLE packet loss critical — data stream interrupted',action:'Check BLE channel map, reduce 2.4GHz congestion',zThr:2.6},{code:'PKT_LOSS_WARN',level:'warn',desc:'BLE retransmission elevated',action:'Inspect RF environment',zThr:1.9}]},
+      {id:'RSSI',    name:'RSSI Signal',   unit:'dBm', base:-50, noise:6,   spike:-35, color:'#448aff', decimals:1,
+        faults:[{code:'SIGNAL_LOSS',level:'crit',desc:'BLE RSSI critically weak',action:'Move device closer to hub',zThr:2.5},{code:'SIGNAL_WEAK',level:'warn',desc:'BLE signal degraded',action:'Check obstructions',zThr:1.8}]},
+    ]},
+  { id:'NODE-D4', type:'CoAP Endpoint', ip:'10.0.1.14', color:'#39ff14',
+    metrics:[
+      {id:'CRC',     name:'CRC Errors/s',  unit:'err/s',base:0,  noise:.3,  spike:28,  color:'#39ff14', decimals:1,
+        faults:[{code:'CRC_STORM',level:'crit',desc:'CRC error storm — data corruption in CoAP payload',action:'Check checksum algorithm, inspect payload encoding',zThr:2.5},{code:'CRC_ELEV',level:'warn',desc:'CRC errors elevated — noisy channel',action:'Add error correction layer',zThr:1.9}]},
+      {id:'JITTER',  name:'Jitter',        unit:'ms',  base:3,   noise:1.5, spike:45,  color:'#ffb300', decimals:1,
+        faults:[{code:'JITTER_HIGH',level:'crit',desc:'Network jitter critical — real-time CoAP timing compromised',action:'Configure QoS, check router buffer bloat',zThr:2.6},{code:'JITTER_WARN',level:'warn',desc:'Jitter elevated',action:'Enable traffic shaping',zThr:1.9}]},
+      {id:'TLS',     name:'TLS Handshake', unit:'ms',  base:110, noise:20,  spike:1800,color:'#00e5ff', decimals:0,
+        faults:[{code:'TLS_FAIL',level:'crit',desc:'TLS handshake failure — certificate or key exchange error',action:'Renew certificates, check CA trust chain',zThr:2.5},{code:'TLS_SLOW',level:'warn',desc:'TLS negotiation slow — CPU overload or key size mismatch',action:'Use ECDHE, reduce key size',zThr:1.9}]},
+    ]},
+  { id:'NODE-E5', type:'MQTT Broker',   ip:'10.0.1.1',  color:'#448aff',
+    metrics:[
+      {id:'CONN',    name:'Active Conns',  unit:'#',   base:24,  noise:3,   spike:95,  color:'#448aff', decimals:0,
+        faults:[{code:'BROKER_OVERFLOW',level:'crit',desc:'MQTT broker connection overflow — broker saturated',action:'Scale broker horizontally, enable clustering',zThr:2.5},{code:'BROKER_HIGH',level:'warn',desc:'Broker connection count elevated',action:'Monitor client reconnect loops',zThr:1.9}]},
+      {id:'LATENCY', name:'Pub Latency',   unit:'ms',  base:8,   noise:4,   spike:290, color:'#d500f9', decimals:0,
+        faults:[{code:'BROKER_LAG',level:'crit',desc:'MQTT broker publish latency critical — message queue saturated',action:'Flush retained messages, increase QoS 0 use',zThr:2.5},{code:'BROKER_SLOW',level:'warn',desc:'Broker latency elevated',action:'Reduce max inflight messages',zThr:1.9}]},
+      {id:'LOSS',    name:'Msg Drop Rate', unit:'%',   base:0,   noise:.1,  spike:18,  color:'#ff1744', decimals:2,
+        faults:[{code:'MSG_DROP',level:'crit',desc:'Broker dropping messages — persistence storage or memory issue',action:'Check broker disk/memory, tune persistence',zThr:2.5},{code:'MSG_DROP_WARN',level:'warn',desc:'Message drop rate elevated',action:'Enable QoS 1/2, check subscriber speed',zThr:1.9}]},
+    ]},
+  { id:'NODE-F6', type:'OTA Server',    ip:'10.0.1.20', color:'#ffb300',
+    metrics:[
+      {id:'BW',      name:'Bandwidth Util',unit:'%',   base:22,  noise:6,   spike:72,  color:'#ffb300', decimals:1,
+        faults:[{code:'BW_SATURATION',level:'crit',desc:'OTA bandwidth saturated — firmware delivery stalled',action:'Throttle update rate, use delta OTA',zThr:2.5},{code:'BW_HIGH',level:'warn',desc:'High OTA bandwidth usage',action:'Schedule updates off-peak',zThr:1.9}]},
+      {id:'RECONN',  name:'Reconnects/min',unit:'/min',base:0.3, noise:.2,  spike:22,  color:'#ff6d00', decimals:1,
+        faults:[{code:'RECONN_STORM',level:'crit',desc:'Client reconnection storm — network instability or auth failure',action:'Check TLS certs, rate-limit reconnections',zThr:2.5},{code:'RECONN_HIGH',level:'warn',desc:'Reconnection rate elevated',action:'Check keepalive interval settings',zThr:1.9}]},
+      {id:'AUTH',    name:'Auth Failures',unit:'#/m',  base:0,   noise:.15, spike:18,  color:'#ff1744', decimals:1,
+        faults:[{code:'AUTH_ATTACK',level:'crit',desc:'Authentication failure spike — possible brute-force attack',action:'Enable rate limiting, rotate credentials',zThr:2.5},{code:'AUTH_WARN',level:'warn',desc:'Auth failures elevated — expired tokens likely',action:'Check token expiry, renew certificates',zThr:1.9}]},
+    ]},
+];
+
+// ── CHIP DIE BLOCKS ──────────────────────────────────────
+const DIE_BLOCKS = [
+  'CPU','FPU','DSP','DMA','SRAM0','SRAM1','FLASH','ROM',
+  'ADC0','ADC1','DAC','COMP','SPI0','I2C','UART','CAN',
+  'GPIO','TIMER','WDT','RTC','USB','ETH','RF','BLE',
+  'AES','RNG','HASH','PLL','LDO','OSC','BGAP','PMU',
+];
+
+// ── APP STATE ────────────────────────────────────────────
+const S = {
+  paused: false,
+  activeTab: 'mcu',
+  faultCounts: { mcu:0, chip:0, iot:0 },
+  totalFaults: 0,
+  history: {
+    mcu:  MCU_SENSORS.map(()=>[]),
+    chip: CHIP_SENSORS.map(()=>[]),
+    iot:  IOT_DEVICES.flatMap(d=>d.metrics.map(()=>[])),
+  },
+  regErrors: new Set(),
+  dieErrors: new Set(),
+  iotDeviceStatus: IOT_DEVICES.map(()=>'ok'),
+  iotMetricHistory: IOT_DEVICES.map(d=>d.metrics.map(()=>[])),
+  toastRecent: new Set(),
+};
+
+let mcuWaveSel=0, mcuWaveData=[];
+let chipWaveSel=0, chipWaveData=[];
+let iotWaveSel=0,  iotWaveData=[];
+const WAVE_WIN = 80;
+const Z_CRIT = 2.5, Z_WARN = 1.8;
+
+// ── BOOT SEQUENCE ────────────────────────────────────────
+const BOOT_LINES = [
+  {t:'> Initializing Sensor Sentry v2.0 fault engine...', ok:true},
+  {t:'> Loading MCU fault classifier (8 monitors)...', ok:true},
+  {t:'> Loading chip diagnostics module (8 subsystems)...', ok:true},
+  {t:'> Scanning IoT device topology (6 nodes)...', ok:true},
+  {t:'> Mounting Z-score sliding window engine...', ok:true},
+  {t:'> Calibrating anomaly thresholds (CRIT=2.5σ, WARN=1.8σ)...', ok:true},
+  {t:'> Connecting to MQTT broker 10.0.1.1...', ok:true},
+  {t:'> Building silicon die health map...', ok:true},
+  {t:'> WARNING: Node NODE-C3 BLE latency elevated at startup', ok:false},
+  {t:'> Compiling fault code database (48 fault types)...', ok:true},
+  {t:'> All systems nominal. Beginning live monitoring.', ok:true},
+];
+
+function runBoot(){
+  const term = document.getElementById('boot-term');
+  const bar  = document.getElementById('boot-bar');
+  const pct  = document.getElementById('boot-pct');
+  let i = 0;
+  const step = ()=>{
+    if(i>=BOOT_LINES.length){
+      setTimeout(()=>{
+        document.getElementById('boot').classList.add('gone');
+        init();
+      },400);
+      return;
+    }
+    const l = BOOT_LINES[i];
+    const div = document.createElement('div');
+    div.className = 'boot-line'+(l.ok?l.t.startsWith('> WARNING')?'':' ok':' err');
+    div.textContent = l.t;
+    term.appendChild(div);
+    term.scrollTop = 9999;
+    const p = Math.round((i+1)/BOOT_LINES.length*100);
+    bar.style.width = p+'%';
+    pct.textContent = p+'%';
+    i++;
+    setTimeout(step, 150+Math.random()*130);
+  };
+  step();
+}
+
+// ── INIT ─────────────────────────────────────────────────
+function init(){
+  buildMCUCards();
+  buildChipCards();
+  buildIoTDevices();
+  buildRegMap();
+  buildDieDiagram();
+  initWaves();
+  setInterval(tick, 900);
+  setInterval(updateClock, 1000);
+  updateClock();
+}
+
+// ── CLOCK ────────────────────────────────────────────────
+function updateClock(){
+  const n = new Date();
+  document.getElementById('hclock').textContent = n.toTimeString().slice(0,8);
+  document.getElementById('hdate').textContent = n.toDateString().toUpperCase();
+}
+
+// ── TABS ─────────────────────────────────────────────────
+function switchTab(name){
+  ['mcu','chip','iot'].forEach(t=>{
+    document.getElementById('content-'+t).classList.toggle('active', t===name);
+    const tb = document.getElementById('tab-'+t);
+    tb.className = 'tab' + (t===name ? ' active-'+t : '');
+  });
+  S.activeTab = name;
+}
+
+// ── BUILD MCU CARDS ──────────────────────────────────────
+function buildMCUCards(){
+  const grid = document.getElementById('mcu-cards');
+  grid.innerHTML = MCU_SENSORS.map((s,i)=>`
+    <div class="mc" id="mc-mcu-${i}">
+      <div class="mc-top"><span class="mc-id">${s.id}</span><span class="mc-dot dot-ok" id="mcd-mcu-${i}"></span></div>
+      <div class="mc-val cyan" id="mcv-mcu-${i}">--</div>
+      <div class="mc-unit">${s.unit}</div>
+      <div class="mc-name">${s.name}</div>
+      <canvas class="mc-spark" id="mcs-mcu-${i}" height="28"></canvas>
+      <div class="mc-sub" id="mcz-mcu-${i}">Z-SCORE: <span class="zv">0.00</span></div>
+    </div>`).join('');
+}
+
+function buildChipCards(){
+  const grid = document.getElementById('chip-cards');
+  grid.innerHTML = CHIP_SENSORS.map((s,i)=>`
+    <div class="mc" id="mc-chip-${i}">
+      <div class="mc-top"><span class="mc-id">${s.id}</span><span class="mc-dot dot-ok" id="mcd-chip-${i}"></span></div>
+      <div class="mc-val cyan" id="mcv-chip-${i}">--</div>
+      <div class="mc-unit">${s.unit}</div>
+      <div class="mc-name">${s.name}</div>
+      <canvas class="mc-spark" id="mcs-chip-${i}" height="28"></canvas>
+      <div class="mc-sub" id="mcz-chip-${i}">Z-SCORE: <span class="zv">0.00</span></div>
+    </div>`).join('');
+}
+
+function buildIoTDevices(){
+  const wrap = document.getElementById('iot-devices');
+  wrap.innerHTML = IOT_DEVICES.map((d,di)=>`
+    <div class="dev-card ok" id="dev-${di}">
+      <div class="dev-header">
+        <div class="dev-id" style="color:${d.color}">${d.id}</div>
+        <span class="dev-status ds-ok" id="devs-${di}">ONLINE</span>
+      </div>
+      <div style="font-size:8px;color:var(--txt2);letter-spacing:1px;margin-bottom:8px">${d.type} · ${d.ip}</div>
+      <div class="dev-metrics">
+        ${d.metrics.map((m,mi)=>`
+          <div class="dm">
+            <span class="dm-lbl">${m.name}</span>
+            <span class="dm-val" id="dv-${di}-${mi}" style="color:${m.color}">--</span>
+            <span style="font-size:7px;color:var(--txt2)">${m.unit}</span>
+          </div>`).join('')}
+      </div>
+      <div class="rssi-bar"><div class="rssi-fill" id="rssi-${di}" style="background:${d.color};width:70%"></div></div>
+    </div>`).join('');
+}
+
+function buildRegMap(){
+  const map = document.getElementById('reg-map');
+  map.innerHTML = Array.from({length:32},(_,i)=>`
+    <div class="reg-cell ok" id="reg-${i}">
+      <span class="reg-addr">0x${(i*4).toString(16).padStart(2,'0')}</span>
+      <span>OK</span>
+    </div>`).join('');
+}
+
+function buildDieDiagram(){
+  const die = document.getElementById('chip-die');
+  die.innerHTML = DIE_BLOCKS.map((b,i)=>`
+    <div class="die-block die-ok" id="die-${i}">
+      <span class="die-label">${b}</span>
+    </div>`).join('');
+  buildChipStatsList();
+}
+
+function buildChipStatsList(){
+  const list = document.getElementById('chip-stats-list');
+  const items = [
+    {name:'SRAM Integrity',    val:'100%',    pct:100, cls:'cstat-ok'},
+    {name:'Flash Endurance',   val:'88%',     pct:88,  cls:'cstat-ok'},
+    {name:'Bus Utilization',   val:'42%',     pct:42,  cls:'cstat-ok'},
+    {name:'ECC Health',        val:'NOMINAL', pct:100, cls:'cstat-ok'},
+    {name:'Oscillator Stable', val:'YES',     pct:100, cls:'cstat-ok'},
+    {name:'Power Domains',     val:'4/4 OK',  pct:100, cls:'cstat-ok'},
+  ];
+  list.innerHTML = items.map((it,i)=>`
+    <div class="cstat ${it.cls}" id="cstat-${i}">
+      <span class="cstat-name">${it.name}</span>
+      <div class="cstat-bar"><div class="cstat-fill" id="csf-${i}" style="width:${it.pct}%;background:var(--green)"></div></div>
+      <span class="cstat-val" id="csv-${i}">${it.val}</span>
+    </div>`).join('');
+}
+
+// ── WAVE INIT ────────────────────────────────────────────
+function initWaves(){
+  ['mcu-wave','chip-wave','iot-wave'].forEach(id=>{
+    const c = document.getElementById(id);
+    if(c){ c.width=c.offsetWidth; c.height=150; }
+  });
+  window.addEventListener('resize',()=>{
+    ['mcu-wave','chip-wave','iot-wave'].forEach(id=>{
+      const c=document.getElementById(id);
+      if(c){c.width=c.offsetWidth;}
+    });
+  });
+}
+
+// ── GENERATE DATA ────────────────────────────────────────
+function genVal(s){
+  const r = Math.random();
+  if(r > 0.97) return s.base + (Math.random()>.5?1:-1)*(s.spike + Math.random()*Math.abs(s.spike)*.3);
+  if(r > 0.93) return s.base + (Math.random()>.5?1:-1)*(Math.abs(s.spike)*.5 + Math.random()*s.noise);
+  return s.base + (Math.random()-.5)*2*s.noise;
+}
+
+// ── Z-SCORE ──────────────────────────────────────────────
+function calcZ(arr){
+  if(arr.length<5) return 0;
+  const w=arr.slice(-WAVE_WIN);
+  const m=w.reduce((a,b)=>a+b,0)/w.length;
+  const std=Math.sqrt(w.reduce((a,b)=>a+(b-m)**2,0)/w.length)||.001;
+  return (arr[arr.length-1]-m)/std;
+}
+function mean(arr){ const w=arr.slice(-WAVE_WIN); return w.reduce((a,b)=>a+b,0)/w.length; }
+function std(arr){ const w=arr.slice(-WAVE_WIN); const m=w.reduce((a,b)=>a+b,0)/w.length; return Math.sqrt(w.reduce((a,b)=>a+(b-m)**2,0)/w.length)||.001; }
+
+// ── MAIN TICK ────────────────────────────────────────────
+function tick(){
+  if(S.paused) return;
+  tickMCU();
+  tickChip();
+  tickIoT();
+  drawWave('mcu-wave', getMCUWaveData(), MCU_SENSORS[mcuWaveSel].color, 'mcu-wave-stats');
+  drawWave('chip-wave', getChipWaveData(), CHIP_SENSORS[chipWaveSel].color, 'chip-wave-stats');
+  drawWave('iot-wave', getIoTWaveData(), '#00e5ff', 'iot-wave-stats');
+  updateHeaderCounts();
+  drawTopoMap();
+}
+
+function getMCUWaveData(){
+  const val = genWavePoint('mcu', mcuWaveSel, MCU_SENSORS);
+  mcuWaveData.push(val);
+  if(mcuWaveData.length>WAVE_WIN) mcuWaveData.shift();
+  return mcuWaveData;
+}
+function getChipWaveData(){
+  const val = genWavePoint('chip', chipWaveSel, CHIP_SENSORS);
+  chipWaveData.push(val);
+  if(chipWaveData.length>WAVE_WIN) chipWaveData.shift();
+  return chipWaveData;
+}
+function getIoTWaveData(){
+  const di = Math.floor(iotWaveSel/3);
+  const mi = iotWaveSel%3;
+  const device = IOT_DEVICES[di]||IOT_DEVICES[0];
+  const metric = device.metrics[mi]||device.metrics[0];
+  const val = genVal(metric);
+  iotWaveData.push(val);
+  if(iotWaveData.length>WAVE_WIN) iotWaveData.shift();
+  return iotWaveData;
+}
+
+function genWavePoint(domain, idx, sensors){
+  const hist = S.history[domain][idx];
+  const val = genVal(sensors[idx]);
+  hist.push(val);
+  if(hist.length>200) hist.shift();
+  return val;
+}
+
+// ── TICK MCU ─────────────────────────────────────────────
+function tickMCU(){
+  MCU_SENSORS.forEach((s,i)=>{
+    const hist = S.history.mcu[i];
+    const val = genVal(s);
+    hist.push(val);
+    if(hist.length>200) hist.shift();
+    const z = calcZ(hist);
+    updateCard('mcu', i, s, val, z);
+    if(Math.abs(z)>=Z_CRIT || Math.abs(z)>=Z_WARN) checkFault(s, val, z, 'mcu', i);
+    if(Math.abs(z)>=Z_CRIT && Math.random()<.15) corruptRegister();
+    if(Math.abs(z)<Z_WARN && Math.random()<.05) healRegister();
+  });
+  updateRegMap();
+}
+
+// ── TICK CHIP ────────────────────────────────────────────
+function tickChip(){
+  CHIP_SENSORS.forEach((s,i)=>{
+    const hist = S.history.chip[i];
+    const val = genVal(s);
+    hist.push(val);
+    if(hist.length>200) hist.shift();
+    const z = calcZ(hist);
+    updateCard('chip', i, s, val, z);
+    if(Math.abs(z)>=Z_CRIT || Math.abs(z)>=Z_WARN) checkFault(s, val, z, 'chip', i);
+    if(Math.abs(z)>=Z_CRIT && Math.random()<.12) corruptDieBlock(i);
+    else if(Math.random()<.04) healDieBlock();
+  });
+  updateChipStatsList();
+}
+
+// ── TICK IoT ─────────────────────────────────────────────
+function tickIoT(){
+  IOT_DEVICES.forEach((d,di)=>{
+    let deviceStatus = 'ok';
+    d.metrics.forEach((m,mi)=>{
+      const hist = S.iotMetricHistory[di][mi];
+      const val = genVal(m);
+      hist.push(val);
+      if(hist.length>200) hist.shift();
+      const z = calcZ(hist);
+      // Update device card value
+      const el = document.getElementById(`dv-${di}-${mi}`);
+      if(el){
+        el.textContent = Math.abs(val).toFixed(m.decimals||1);
+        el.style.color = Math.abs(z)>=Z_CRIT ? 'var(--red)' : Math.abs(z)>=Z_WARN ? 'var(--amber)' : m.color;
+      }
+      if(Math.abs(z)>=Z_CRIT){ deviceStatus='lost'; checkFault(m, val, z, 'iot', di*10+mi); }
+      else if(Math.abs(z)>=Z_WARN && deviceStatus!=='lost'){ deviceStatus='warn'; checkFault(m, val, z, 'iot', di*10+mi); }
+    });
+    S.iotDeviceStatus[di] = deviceStatus;
+    updateDeviceCard(di, deviceStatus, d);
+  });
+}
+
+// ── UPDATE CARD ──────────────────────────────────────────
+function updateCard(domain, idx, s, val, z){
+  const card = document.getElementById(`mc-${domain}-${idx}`);
+  const valEl= document.getElementById(`mcv-${domain}-${idx}`);
+  const dotEl= document.getElementById(`mcd-${domain}-${idx}`);
+  const zEl  = document.getElementById(`mcz-${domain}-${idx}`);
+  if(!card) return;
+  const decs = s.decimals !== undefined ? s.decimals : 1;
+  valEl.textContent = val.toFixed(decs);
+  if(Math.abs(z)>=Z_CRIT){
+    valEl.className='mc-val red'; dotEl.className='mc-dot dot-crit';
+    card.className='mc fault-crit';
+    if(zEl) zEl.innerHTML=`Z-SCORE: <span class="zv crit">${z.toFixed(2)}</span>`;
+  } else if(Math.abs(z)>=Z_WARN){
+    valEl.className='mc-val amber'; dotEl.className='mc-dot dot-warn';
+    card.className='mc fault-warn';
+    if(zEl) zEl.innerHTML=`Z-SCORE: <span class="zv warn">${z.toFixed(2)}</span>`;
+  } else {
+    valEl.className='mc-val cyan'; dotEl.className='mc-dot dot-ok';
+    card.className='mc';
+    if(zEl) zEl.innerHTML=`Z-SCORE: <span class="zv">${z.toFixed(2)}</span>`;
+  }
+  drawSparkline(`mcs-${domain}-${idx}`, S.history[domain]?.[idx] || [], s.color);
+}
+
+// ── SPARKLINE ────────────────────────────────────────────
+function drawSparkline(id, data, color){
+  const c = document.getElementById(id);
+  if(!c || data.length<2) return;
+  c.width = c.offsetWidth; c.height = 28;
+  const ctx = c.getContext('2d');
+  const vals = data.slice(-24);
+  const mn=Math.min(...vals), mx=Math.max(...vals), rng=mx-mn||1;
+  const W=c.width, H=c.height;
+  const px=i=>(i/(vals.length-1))*W;
+  const py=v=>H-2-((v-mn)/rng)*(H-4);
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,color+'55'); g.addColorStop(1,color+'00');
+  ctx.beginPath();
+  ctx.moveTo(px(0),py(vals[0]));
+  for(let j=1;j<vals.length;j++) ctx.lineTo(px(j),py(vals[j]));
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=g; ctx.fill();
+  ctx.beginPath();
+  ctx.strokeStyle=color; ctx.lineWidth=1.5;
+  ctx.moveTo(px(0),py(vals[0]));
+  for(let j=1;j<vals.length;j++) ctx.lineTo(px(j),py(vals[j]));
+  ctx.stroke();
+}
+
+// ── WAVEFORM CANVAS ──────────────────────────────────────
+function drawWave(canvasId, data, color, statsId){
+  const c = document.getElementById(canvasId);
+  if(!c || data.length<2) return;
+  const W=c.width, H=c.height;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const mn=Math.min(...data)-1, mx=Math.max(...data)+1, rng=mx-mn||1;
+  const px=i=>(i/(data.length-1))*(W-50)+25;
+  const py=v=>H-20-((v-mn)/rng)*(H-30);
+  const m=mean(data), s2=std(data);
+  // Grid
+  ctx.strokeStyle='#162030'; ctx.lineWidth=1;
+  for(let r=0;r<=4;r++){
+    const yy=10+(r/4)*(H-20);
+    ctx.beginPath(); ctx.moveTo(25,yy); ctx.lineTo(W-25,yy); ctx.stroke();
+    const lv=(mx-(r/4)*rng).toFixed(1);
+    ctx.fillStyle='#3d566e'; ctx.font='8px Share Tech Mono';
+    ctx.fillText(lv,2,yy+3);
+  }
+  // Warning band
+  const whi=Math.min(m+Z_WARN*s2,mx), wlo=Math.max(m-Z_WARN*s2,mn);
+  ctx.fillStyle='rgba(255,179,0,.05)';
+  ctx.fillRect(25,py(whi),W-50,py(wlo)-py(whi));
+  // Crit lines
+  [m+Z_CRIT*s2, m-Z_CRIT*s2].forEach(th=>{
+    if(th>=mn && th<=mx){
+      ctx.setLineDash([3,4]); ctx.strokeStyle='rgba(255,23,68,.4)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(25,py(th)); ctx.lineTo(W-25,py(th)); ctx.stroke();
+    }
+  });
+  ctx.setLineDash([]);
+  // Mean
+  ctx.setLineDash([5,4]); ctx.strokeStyle=color+'40'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(25,py(m)); ctx.lineTo(W-25,py(m)); ctx.stroke();
+  ctx.setLineDash([]);
+  // Fill
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,color+'28'); grad.addColorStop(1,color+'00');
+  ctx.beginPath();
+  ctx.moveTo(px(0),py(data[0]));
+  for(let i=1;i<data.length;i++) ctx.lineTo(px(i),py(data[i]));
+  ctx.lineTo(px(data.length-1),H); ctx.lineTo(px(0),H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  // Line
+  ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=1.5;
+  ctx.shadowBlur=5; ctx.shadowColor=color;
+  ctx.moveTo(px(0),py(data[0]));
+  for(let i=1;i<data.length;i++) ctx.lineTo(px(i),py(data[i]));
+  ctx.stroke(); ctx.shadowBlur=0;
+  // Anomaly dots
+  const z=calcZ(data);
+  data.forEach((v,i)=>{
+    const dz=(v-m)/(s2||1);
+    if(Math.abs(dz)>=Z_CRIT){ ctx.beginPath(); ctx.arc(px(i),py(v),4,0,Math.PI*2); ctx.fillStyle='#ff1744'; ctx.fill(); }
+    else if(Math.abs(dz)>=Z_WARN){ ctx.beginPath(); ctx.arc(px(i),py(v),3,0,Math.PI*2); ctx.fillStyle='#ffb300'; ctx.fill(); }
+  });
+  // Current dot
+  const lv=data[data.length-1];
+  ctx.beginPath(); ctx.arc(px(data.length-1),py(lv),4,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.shadowBlur=10; ctx.shadowColor=color; ctx.fill(); ctx.shadowBlur=0;
+  // Stats
+  if(statsId){
+    const el=document.getElementById(statsId);
+    if(el) el.textContent=`MEAN: ${m.toFixed(2)} | STD: ${s2.toFixed(3)} | Z-SCORE: ${z.toFixed(2)}`;
+  }
+}
+
+// ── FAULT CLASSIFICATION ─────────────────────────────────
+const faultCooldown = {};
+function checkFault(s, val, z, domain, idx){
+  const key = `${domain}-${idx}-${Math.abs(z)>=Z_CRIT?'crit':'warn'}`;
+  const now = Date.now();
+  if(faultCooldown[key] && now-faultCooldown[key]<12000) return;
+  faultCooldown[key] = now;
+  const level = Math.abs(z)>=Z_CRIT ? 'crit' : 'warn';
+  const faultDef = (s.faults||[]).find(f=>f.level===level);
+  if(!faultDef) return;
+  const time = new Date().toTimeString().slice(0,8);
+  logFault(domain, {
+    code: faultDef.code,
+    level,
+    desc: faultDef.desc,
+    action: faultDef.action,
+    sensor: s.id||s.name,
+    val: `${val.toFixed?val.toFixed(2):val} ${s.unit||''}`,
+    z: z.toFixed(2),
+    time,
+  });
+  S.faultCounts[domain]++;
+  S.totalFaults++;
+  document.getElementById(`tb-${domain}`).textContent = S.faultCounts[domain];
+  if(level==='crit') showToast(faultDef.code, `${s.id||s.id}: ${faultDef.desc.slice(0,60)}...`, domain, 'crit');
+}
+
+function logFault(domain, f){
+  const list = document.getElementById(`${domain}-faults`);
+  const empty = list.querySelector('.fault-empty');
+  if(empty) empty.remove();
+  const div = document.createElement('div');
+  div.className = `fault-entry fe-${f.level}`;
+  div.innerHTML = `
+    <div class="fe-top">
+      <span class="fe-code">⚡ ${f.code}</span>
+      <span class="fe-time">${f.time}</span>
+    </div>
+    <div class="fe-desc">${f.desc}</div>
+    <div style="font-size:9px;color:var(--txt2);margin-bottom:2px">Sensor: ${f.sensor} | Value: ${f.val} | Z: ${f.z}</div>
+    <div class="fe-action">→ ${f.action}</div>`;
+  list.insertBefore(div, list.firstChild);
+  while(list.children.length>25) list.removeChild(list.lastChild);
+}
+
+// ── TOASTS ───────────────────────────────────────────────
+function showToast(code, msg, domain, level){
+  const key=`${code}-${msg.slice(0,20)}`;
+  if(S.toastRecent.has(key)) return;
+  S.toastRecent.add(key);
+  setTimeout(()=>S.toastRecent.delete(key), 15000);
+  const wrap = document.getElementById('toasts');
+  if(wrap.children.length>=4) return;
+  const cls = level==='crit'?'':'warn';
+  const domTxt = {mcu:'MICROPROCESSOR',chip:'CHIP DIAGNOSTICS',iot:'IoT NETWORK'}[domain];
+  const t = document.createElement('div');
+  t.className = `toast ${cls}`;
+  t.innerHTML = `<div class="t-code">⚡ ${code}</div><div class="t-msg">${msg}</div><div class="t-domain">${domTxt}</div>`;
+  wrap.appendChild(t);
+  setTimeout(()=>{ t.style.animation='fade-out .3s ease forwards'; setTimeout(()=>t.remove(),300); },6000);
+}
+
+// ── REGISTER MAP ─────────────────────────────────────────
+function corruptRegister(){
+  if(S.regErrors.size>=8) return;
+  const r = Math.floor(Math.random()*32);
+  S.regErrors.add(r);
+}
+function healRegister(){
+  if(S.regErrors.size===0) return;
+  const arr=[...S.regErrors];
+  S.regErrors.delete(arr[Math.floor(Math.random()*arr.length)]);
+}
+function updateRegMap(){
+  const errs=S.regErrors.size;
+  document.getElementById('reg-summary').textContent = errs===0 ? '32/32 OK' : `${32-errs}/32 OK — ${errs} ERROR${errs>1?'S':''}`;
+  for(let i=0;i<32;i++){
+    const c=document.getElementById(`reg-${i}`);
+    if(!c) continue;
+    const suspect = [...S.regErrors].some(e=>Math.abs(e-i)===1) && !S.regErrors.has(i);
+    if(S.regErrors.has(i)){ c.className='reg-cell error'; c.innerHTML=`<span class="reg-addr">0x${(i*4).toString(16).padStart(2,'0')}</span><span>ERR</span>`; }
+    else if(suspect){ c.className='reg-cell suspect'; c.innerHTML=`<span class="reg-addr">0x${(i*4).toString(16).padStart(2,'0')}</span><span>?</span>`; }
+    else { c.className='reg-cell ok'; c.innerHTML=`<span class="reg-addr">0x${(i*4).toString(16).padStart(2,'0')}</span><span>OK</span>`; }
+  }
+}
+
+// ── DIE DIAGRAM ──────────────────────────────────────────
+function corruptDieBlock(sensorIdx){
+  const blocks=[
+    [0,1,2], [4,5,6], [8,9,10,11], [12,13,14,15],
+    [4,5], [6,7], [20,21], [8,9],
+  ];
+  const candidates = blocks[sensorIdx]||[sensorIdx%32];
+  const b = candidates[Math.floor(Math.random()*candidates.length)];
+  S.dieErrors.add(b);
+}
+function healDieBlock(){
+  if(S.dieErrors.size===0) return;
+  const arr=[...S.dieErrors];
+  S.dieErrors.delete(arr[Math.floor(Math.random()*arr.length)]);
+}
+function updateChipStatsList(){
+  const errs = S.dieErrors.size;
+  // Update die blocks
+  for(let i=0;i<DIE_BLOCKS.length;i++){
+    const el=document.getElementById(`die-${i}`);
+    if(!el) continue;
+    if(S.dieErrors.has(i)){ el.className='die-block die-fail'; }
+    else if([...S.dieErrors].some(e=>Math.abs(e-i)===1)){ el.className='die-block die-warn'; }
+    else { el.className='die-block die-ok'; }
+  }
+  document.getElementById('die-summary').textContent = errs===0 ? 'ALL BLOCKS NOMINAL' : `${errs} BLOCK${errs>1?'S':''} DEGRADED`;
+  // Update stat bars from live data
+  const sramZ = Math.abs(calcZ(S.history.chip[0]||[]));
+  const flashHist = S.history.chip[1]||[];
+  const flashLast = flashHist.length ? flashHist[flashHist.length-1] : 88;
+  const busZ = Math.abs(calcZ(S.history.chip[4]||[]));
+  const eccZ = Math.abs(calcZ(S.history.chip[7]||[]));
+  const updates=[
+    {val:sramZ>=Z_CRIT?'PARITY ERR':sramZ>=Z_WARN?'MARGINAL':'100%', pct:sramZ>=Z_CRIT?30:sramZ>=Z_WARN?65:100, cls:sramZ>=Z_CRIT?'cstat-crit':sramZ>=Z_WARN?'cstat-warn':'cstat-ok', color:sramZ>=Z_CRIT?'var(--red)':sramZ>=Z_WARN?'var(--amber)':'var(--green)'},
+    {val:flashLast.toFixed(1)+'%', pct:flashLast, cls:flashLast<50?'cstat-crit':flashLast<70?'cstat-warn':'cstat-ok', color:flashLast<50?'var(--red)':flashLast<70?'var(--amber)':'var(--green)'},
+    {val:(40+busZ*8).toFixed(0)+'%', pct:Math.min(40+busZ*8,100), cls:busZ>=Z_CRIT?'cstat-warn':'cstat-ok', color:busZ>=Z_CRIT?'var(--amber)':'var(--green)'},
+    {val:eccZ>=Z_CRIT?'MULTI-BIT':eccZ>=Z_WARN?'CORRECTING':'NOMINAL', pct:eccZ>=Z_CRIT?20:eccZ>=Z_WARN?60:100, cls:eccZ>=Z_CRIT?'cstat-crit':eccZ>=Z_WARN?'cstat-warn':'cstat-ok', color:eccZ>=Z_CRIT?'var(--red)':eccZ>=Z_WARN?'var(--amber)':'var(--green)'},
+    {val:errs===0?'YES':'CHECK', pct:errs===0?100:50, cls:errs>3?'cstat-crit':errs>0?'cstat-warn':'cstat-ok', color:errs>3?'var(--red)':errs>0?'var(--amber)':'var(--green)'},
+    {val:`${4-Math.min(errs,3)}/4 OK`, pct:(4-Math.min(errs,3))/4*100, cls:errs>=4?'cstat-crit':errs>=2?'cstat-warn':'cstat-ok', color:errs>=4?'var(--red)':errs>=2?'var(--amber)':'var(--green)'},
+  ];
+  updates.forEach((u,i)=>{
+    const sv=document.getElementById(`csv-${i}`);
+    const sf=document.getElementById(`csf-${i}`);
+    const sc=document.getElementById(`cstat-${i}`);
+    if(sv) sv.textContent=u.val;
+    if(sf){ sf.style.width=u.pct+'%'; sf.style.background=u.color; }
+    if(sc) sc.className=`cstat ${u.cls}`;
+  });
+}
+
+// ── IoT DEVICE CARD UPDATE ───────────────────────────────
+function updateDeviceCard(di, status, d){
+  const card=document.getElementById(`dev-${di}`);
+  const badge=document.getElementById(`devs-${di}`);
+  const rssi=document.getElementById(`rssi-${di}`);
+  if(!card||!badge) return;
+  card.className=`dev-card ${status}`;
+  if(status==='lost'){
+    badge.className='dev-status ds-lost'; badge.textContent='FAULT';
+    if(rssi){ rssi.style.background='var(--red)'; rssi.style.width='20%'; }
+  } else if(status==='warn'){
+    badge.className='dev-status ds-warn'; badge.textContent='WARN';
+    if(rssi){ rssi.style.background='var(--amber)'; rssi.style.width='45%'; }
+  } else {
+    badge.className='dev-status ds-ok'; badge.textContent='ONLINE';
+    const rssiHist = S.iotMetricHistory[di][2]||[];
+    const rssiLast = rssiHist.length ? rssiHist[rssiHist.length-1] : -58;
+    const pct = Math.max(0, Math.min(100, ((rssiLast+100)/70*100)));
+    if(rssi){ rssi.style.background=d.color; rssi.style.width=pct+'%'; }
+  }
+}
+
+// ── HEADER COUNTS ────────────────────────────────────────
+function updateHeaderCounts(){
+  document.getElementById('h-mcu-faults').textContent = S.faultCounts.mcu;
+  document.getElementById('h-chip-faults').textContent = S.faultCounts.chip;
+  document.getElementById('h-iot-faults').textContent  = S.faultCounts.iot;
+  document.getElementById('h-total').textContent       = S.totalFaults;
+  if(S.totalFaults > 0){
+    document.getElementById('h-total').style.animation = 'none';
+    document.getElementById('h-total').style.color = 'var(--red)';
+  }
+}
+
+// ── TOPOLOGY MAP ─────────────────────────────────────────
+function drawTopoMap(){
+  const c=document.getElementById('topo-canvas');
+  if(!c) return;
+  c.width = c.offsetWidth;
+  const W=c.width, H=c.height;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  // Gateway in center
+  const gx=W/2, gy=H/2;
+  const nodes=[
+    {x:gx-160,y:gy-55,di:0},{x:gx+50,y:gy-70,di:1},{x:gx+160,y:gy-40,di:2},
+    {x:gx-150,y:gy+55,di:3},{x:gx-30,y:gy+75,di:4},{x:gx+150,y:gy+55,di:5},
+  ];
+  // Draw lines
+  nodes.forEach(n=>{
+    const st=S.iotDeviceStatus[n.di];
+    ctx.strokeStyle=st==='lost'?'rgba(255,23,68,.5)':st==='warn'?'rgba(255,179,0,.4)':'rgba(57,255,20,.25)';
+    ctx.lineWidth=st==='ok'?1:1.5;
+    ctx.setLineDash(st==='lost'?[4,4]:[]);
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.lineTo(n.x,n.y); ctx.stroke();
+    ctx.setLineDash([]);
+    // Packet animation dot
+    if(st!=='lost'){
+      const prog=(Date.now()/1200)%1;
+      const dx=n.x+(gx-n.x)*prog, dy=n.y+(gy-n.y)*prog;
+      ctx.beginPath(); ctx.arc(dx,dy,2.5,0,Math.PI*2);
+      ctx.fillStyle=st==='warn'?'var(--amber)':'var(--green)'; ctx.fill();
+    }
+  });
+  // Gateway node
+  ctx.beginPath(); ctx.arc(gx,gy,18,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,229,255,.12)'; ctx.fill();
+  ctx.strokeStyle='var(--cyan)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='var(--cyan)'; ctx.font='bold 8px Share Tech Mono';
+  ctx.textAlign='center'; ctx.fillText('GW',gx,gy+3);
+  ctx.font='7px Share Tech Mono'; ctx.fillStyle='#3d566e';
+  ctx.fillText('BROKER',gx,gy+26);
+  // Device nodes
+  nodes.forEach(n=>{
+    const d=IOT_DEVICES[n.di];
+    const st=S.iotDeviceStatus[n.di];
+    const col=st==='lost'?'#ff1744':st==='warn'?'#ffb300':d.color;
+    ctx.beginPath(); ctx.arc(n.x,n.y,13,0,Math.PI*2);
+    ctx.fillStyle=col+'1a'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=st==='lost'?2:1.5; ctx.stroke();
+    ctx.fillStyle=col; ctx.font='bold 7px Share Tech Mono';
+    ctx.textAlign='center'; ctx.fillText(d.id.split('-')[1]||d.id,n.x,n.y+3);
+    ctx.font='6px Share Tech Mono'; ctx.fillStyle='#3d566e';
+    ctx.fillText(d.type.split(' ')[0],n.x,n.y+22);
+  });
+  ctx.textAlign='left';
+  // Summary
+  const lostCount=S.iotDeviceStatus.filter(s=>s==='lost').length;
+  const warnCount=S.iotDeviceStatus.filter(s=>s==='warn').length;
+  document.getElementById('topo-summary').textContent=
+    lostCount>0?`${lostCount} NODE${lostCount>1?'S':''} FAULTED`:
+    warnCount>0?`${warnCount} NODE${warnCount>1?'S':''} WARNING`:
+    'ALL NODES NOMINAL';
+}
+
+// ── CONTROLS ─────────────────────────────────────────────
+function togglePause(){
+  S.paused=!S.paused;
+  const btn=document.getElementById('pause-btn');
+  const badge=document.getElementById('status-badge');
+  const txt=document.getElementById('status-txt');
+  btn.textContent=S.paused?'▶ RESUME':'⏸ PAUSE';
+  badge.className='status-badge '+(S.paused?'sb-pause':'sb-live');
+  badge.innerHTML=`<span class="dot ${S.paused?'dot-a':'dot-g'}"></span><span id="status-txt">${S.paused?'PAUSED':'MONITORING'}</span>`;
+}
+
+function clearFaults(domain){
+  const list=document.getElementById(`${domain}-faults`);
+  list.innerHTML='<div class="fault-empty">No faults detected</div>';
+}
+
+// ── BOOT ─────────────────────────────────────────────────
+window.addEventListener('load', runBoot);
+</script>
+</body>
+</html>

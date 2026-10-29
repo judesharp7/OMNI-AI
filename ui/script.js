@@ -5,15 +5,15 @@
 
 class OmniAIUI {
     constructor() {
-        this.initializeElements();
-        this.setupEventListeners();
-        this.startupSequence();
         this.settings = {
             neonEnabled: true,
             soundEnabled: true,
             animationsEnabled: true,
             voiceSpeed: 150
         };
+        this.initializeElements();
+        this.setupEventListeners();
+        this.startupSequence();
     }
 
     // ========================================================================
@@ -44,6 +44,7 @@ class OmniAIUI {
         this.voiceStatus = document.getElementById('voiceStatus');
         this.inputTranscript = document.getElementById('inputTranscript');
         this.responseTranscript = document.getElementById('responseTranscript');
+        this.voiceTextInput = document.getElementById('voiceTextInput');
 
         // Security
         this.encryptBtn = document.getElementById('encryptBtn');
@@ -57,6 +58,8 @@ class OmniAIUI {
         // Activity Log
         this.activityLog = document.getElementById('activityLog');
         this.timeDisplay = document.getElementById('timeDisplay');
+        this.systemOnlineStatus = document.getElementById('systemOnlineStatus');
+        this.networkStatus = document.getElementById('networkStatus');
     }
 
     setupEventListeners() {
@@ -69,9 +72,22 @@ class OmniAIUI {
         this.settingsBtn.addEventListener('click', () => this.openSettings());
         this.closeSettings.addEventListener('click', () => this.closeSettingsModal());
         this.themePulse.addEventListener('click', () => this.toggleTheme());
+        this.settingsModal.addEventListener('click', (event) => {
+            if (event.target === this.settingsModal) this.closeSettingsModal();
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && this.settingsModal.classList.contains('active')) {
+                this.closeSettingsModal();
+            }
+        });
 
         // Voice
         this.listenBtn.addEventListener('click', () => this.startListening());
+        document.getElementById('speakBtn').addEventListener('click', () => this.speakResponse());
+        document.getElementById('voiceSendBtn').addEventListener('click', () => this.sendTypedMessage());
+        this.voiceTextInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') this.sendTypedMessage();
+        });
 
         // Security
         this.encryptBtn.addEventListener('click', () => this.encryptData());
@@ -93,6 +109,17 @@ class OmniAIUI {
         // Settings toggles
         document.getElementById('neonToggle')?.addEventListener('change', (e) => {
             this.settings.neonEnabled = e.target.checked;
+            document.body.classList.toggle('reduced-glow', !e.target.checked);
+        });
+        document.getElementById('soundToggle')?.addEventListener('change', (e) => {
+            this.settings.soundEnabled = e.target.checked;
+        });
+        document.getElementById('animToggle')?.addEventListener('change', (e) => {
+            this.settings.animationsEnabled = e.target.checked;
+            document.body.classList.toggle('reduced-motion', !e.target.checked);
+        });
+        document.getElementById('voiceSpeedSlider')?.addEventListener('input', (e) => {
+            this.settings.voiceSpeed = Number(e.target.value);
         });
     }
 
@@ -102,16 +129,23 @@ class OmniAIUI {
 
     navigateSection(event) {
         const target = event.currentTarget.getAttribute('data-section');
+        const targetSection = document.getElementById(target);
+        if (!targetSection) return;
 
         // Update nav items
-        this.navItems.forEach(item => item.classList.remove('active'));
+        this.navItems.forEach(item => {
+            item.classList.remove('active');
+            item.setAttribute('aria-current', 'false');
+        });
         event.currentTarget.classList.add('active');
+        event.currentTarget.setAttribute('aria-current', 'page');
 
         // Update sections
         this.sections.forEach(section => section.classList.remove('active'));
-        document.getElementById(target).classList.add('active');
+        targetSection.classList.add('active');
 
         this.addActivityLog(`Navigated to ${target} section`);
+        if (target === 'monitor') this.updateSystemMonitor();
         this.playSound('click');
     }
 
@@ -121,16 +155,21 @@ class OmniAIUI {
 
     openSettings() {
         this.settingsModal.classList.add('active');
+        this.settingsModal.setAttribute('aria-hidden', 'false');
+        this.closeSettings.focus();
         this.playSound('open');
     }
 
     closeSettingsModal() {
         this.settingsModal.classList.remove('active');
+        this.settingsModal.setAttribute('aria-hidden', 'true');
+        this.settingsBtn.focus();
         this.playSound('close');
     }
 
     toggleTheme() {
-        document.body.classList.toggle('dark-theme');
+        const lightTheme = document.body.classList.toggle('light-theme');
+        this.themePulse.setAttribute('aria-label', lightTheme ? 'Switch to dark theme' : 'Switch to light theme');
         this.playSound('click');
     }
 
@@ -140,46 +179,43 @@ class OmniAIUI {
 
     refreshDashboard() {
         this.updateSystemStats();
+        this.updateSystemMonitor();
         this.addActivityLog('Dashboard refreshed');
         this.playSound('refresh');
     }
 
     async updateSystemStats() {
         try {
-            const res = await fetch('/api/health');
-            if (!res.ok) throw new Error('status ' + res.status);
-            const json = await res.json();
-            const d = json.data || {};
-            const cpu    = Math.round(d.cpu_usage    ?? (Math.random() * 80 + 10));
-            const memory = Math.round(d.memory_usage ?? (Math.random() * 70 + 15));
-            const disk   = Math.round(d.disk_usage   ?? (Math.random() * 60 + 20));
-
-            this.cpuUsage.textContent    = cpu    + '%';
-            this.memoryUsage.textContent = memory + '%';
-            this.diskUsage.textContent   = disk   + '%';
-
-            this.cpuBar.style.width    = cpu    + '%';
-            this.memoryBar.style.width = memory + '%';
-            this.diskBar.style.width   = disk   + '%';
-
-            this.updateBarColor(this.cpuBar,    cpu);
-            this.updateBarColor(this.memoryBar, memory);
-            this.updateBarColor(this.diskBar,   disk);
-        } catch (_) {
-            // Backend offline — keep random demo values
-            const cpu = Math.floor(Math.random() * 80) + 10;
-            const memory = Math.floor(Math.random() * 70) + 15;
-            const disk   = Math.floor(Math.random() * 60) + 20;
-            this.cpuUsage.textContent    = cpu    + '%';
-            this.memoryUsage.textContent = memory + '%';
-            this.diskUsage.textContent   = disk   + '%';
-            this.cpuBar.style.width    = cpu    + '%';
-            this.memoryBar.style.width = memory + '%';
-            this.diskBar.style.width   = disk   + '%';
-            this.updateBarColor(this.cpuBar,    cpu);
-            this.updateBarColor(this.memoryBar, memory);
-            this.updateBarColor(this.diskBar,   disk);
+            const json = await this.requestJson('/api/health');
+            const d = json.data;
+            this.setStat(this.cpuUsage, this.cpuBar, d.cpu_usage);
+            this.setStat(this.memoryUsage, this.memoryBar, d.memory_usage);
+            this.setStat(this.diskUsage, this.diskBar, d.disk_usage);
+            this.networkStatus.textContent = 'Connected';
+            this.systemOnlineStatus.textContent = 'System connected';
+        } catch (error) {
+            [this.cpuUsage, this.memoryUsage, this.diskUsage].forEach((value) => {
+                value.textContent = 'Unavailable';
+            });
+            [this.cpuBar, this.memoryBar, this.diskBar].forEach((bar) => {
+                bar.style.width = '0%';
+            });
+            this.networkStatus.textContent = 'Offline';
+            this.systemOnlineStatus.textContent = 'Backend offline';
         }
+    }
+
+    setStat(value, bar, rawValue) {
+        const percentage = Number(rawValue);
+        if (!Number.isFinite(percentage)) {
+            value.textContent = 'Unavailable';
+            bar.style.width = '0%';
+            return;
+        }
+        const safePercentage = Math.min(100, Math.max(0, percentage));
+        value.textContent = `${Math.round(safePercentage)}%`;
+        bar.style.width = `${safePercentage}%`;
+        this.updateBarColor(bar, safePercentage);
     }
 
     updateBarColor(bar, percentage) {
@@ -195,31 +231,85 @@ class OmniAIUI {
     async getSystemHealth() {
         this.showNotification('Fetching system health...');
         try {
-            const res  = await fetch('/api/health');
-            const json = await res.json();
-            const d    = json.data || {};
-            const status = (d.overall_status || 'good').toUpperCase();
-            const cpu    = Math.round(d.cpu_usage    ?? 0);
-            const memory = Math.round(d.memory_usage ?? 0);
-            const disk   = Math.round(d.disk_usage   ?? 0);
-            const issues = d.issues || [];
+            const json = await this.requestJson('/api/health');
+            const d = json.data;
 
             const auditResults = document.getElementById('auditResults');
             if (auditResults) {
-                auditResults.innerHTML = `
-                    <div class="audit-item success">✓ Overall Status: ${status}</div>
-                    <div class="audit-item ${cpu > 80 ? 'warning' : 'success'}">✓ CPU: ${cpu}%</div>
-                    <div class="audit-item ${memory > 80 ? 'warning' : 'success'}">✓ Memory: ${memory}%</div>
-                    <div class="audit-item ${disk > 80 ? 'warning' : 'success'}">✓ Disk: ${disk}%</div>
-                    ${issues.map(i => `<div class="audit-item warning">⚠ ${i}</div>`).join('')}
-                `;
+                const metrics = [
+                    ['System status', d.overall_status],
+                    ['CPU', `${Math.round(d.cpu_usage)}%`],
+                    ['Memory', `${Math.round(d.memory_usage)}%`],
+                    ['Disk', `${Math.round(d.disk_usage)}%`],
+                ];
+                auditResults.replaceChildren();
+                metrics.forEach(([label, value]) => {
+                    const item = document.createElement('div');
+                    item.className = 'audit-item';
+                    item.textContent = `${label}: ${value}`;
+                    auditResults.appendChild(item);
+                });
             }
             this.showNotification('System health report ready');
             this.addActivityLog('System health check completed');
-        } catch (e) {
-            this.showNotification('Backend offline — showing cached data', 'warning');
-            this.addActivityLog('Health check failed: ' + e.message);
+        } catch (error) {
+            this.showNotification(error.message, 'error');
+            this.addActivityLog(`Health check failed: ${error.message}`);
         }
+    }
+
+    async updateSystemMonitor() {
+        try {
+            const json = await this.requestJson('/api/monitor');
+            const data = json.data;
+            const health = await this.requestJson('/api/health');
+            this.setStat(
+                document.getElementById('monitorCpuValue'),
+                document.getElementById('monitorCpuBar'),
+                health.data.cpu_usage,
+            );
+            this.setStat(
+                document.getElementById('monitorMemoryValue'),
+                document.getElementById('monitorMemoryBar'),
+                health.data.memory_usage,
+            );
+            document.getElementById('uptimeValue').textContent =
+                this.formatDuration(data.uptime_seconds);
+
+            const processOverview = document.getElementById('processOverview');
+            processOverview.replaceChildren();
+            const count = document.createElement('p');
+            count.textContent = `${data.process_count} processes running`;
+            processOverview.appendChild(count);
+            data.processes.forEach((process) => {
+                const row = document.createElement('div');
+                row.className = 'process-item';
+                row.textContent = `${process.name} · PID ${process.pid} · ${Number(process.memory_percent).toFixed(1)}% memory`;
+                processOverview.appendChild(row);
+            });
+
+            const systemHealth = document.getElementById('systemHealth');
+            systemHealth.replaceChildren();
+            const healthStatus = document.createElement('div');
+            healthStatus.className = 'health-item';
+            healthStatus.textContent = `System status: ${health.data.overall_status}`;
+            systemHealth.appendChild(healthStatus);
+        } catch (error) {
+            document.getElementById('uptimeValue').textContent = 'Unavailable';
+            document.getElementById('processOverview').textContent =
+                `Monitoring unavailable: ${error.message}`;
+            document.getElementById('systemHealth').textContent = 'Monitoring unavailable';
+        }
+    }
+
+    formatDuration(rawSeconds) {
+        const totalSeconds = Math.max(0, Math.floor(Number(rawSeconds) || 0));
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const time = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        return days ? `${days}d ${time}` : time;
     }
 
     // ========================================================================
@@ -268,27 +358,33 @@ class OmniAIUI {
     }
 
     fallbackVoiceInput() {
-        const promptText = prompt("Voice recognition unavailable or inactive. Enter your message for OMNI-AI:");
-        if (promptText && promptText.trim()) {
-            this.inputTranscript.textContent = promptText;
-            this.voiceStatus.textContent = '⚡ Processing with AI...';
-            this.processVoiceCommand(promptText);
-        } else {
-            this.voiceStatus.textContent = 'Ready to listen';
-            this.listenBtn.classList.remove('listening');
+        this.voiceStatus.textContent = 'Voice recognition unavailable. Type your message below.';
+        this.listenBtn.classList.remove('listening', 'pulse-btn');
+        this.voiceTextInput.focus();
+        this.showNotification('Voice recognition is unavailable. You can type instead.', 'warning');
+    }
+
+    sendTypedMessage() {
+        const message = this.voiceTextInput.value.trim();
+        if (!message) {
+            this.showNotification('Enter a message first', 'warning');
+            this.voiceTextInput.focus();
+            return;
         }
+        this.voiceTextInput.value = '';
+        this.inputTranscript.textContent = message;
+        this.voiceStatus.textContent = 'Processing…';
+        this.processVoiceCommand(message);
     }
 
     async processVoiceCommand(commandText) {
         try {
-            const res = await fetch('/api/chat', {
+            const json = await this.requestJson('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: commandText || "system status" })
             });
-
-            const json = await res.json();
-            const reply = json.response || "No response received.";
+            const reply = json.response;
 
             this.voiceStatus.textContent = '🔊 Speaking...';
             this.playSound('response');
@@ -296,24 +392,30 @@ class OmniAIUI {
                 this.voiceStatus.textContent = 'Ready to listen';
                 this.listenBtn.classList.remove('listening');
             });
-
-            // Speak response if browser speech synthesis is supported
-            if ('speechSynthesis' in window && this.settings.soundEnabled) {
-                const utterance = new SpeechSynthesisUtterance(reply);
-                utterance.rate = (this.settings.voiceSpeed || 150) / 100;
-                window.speechSynthesis.speak(utterance);
-            }
+            this.speakResponse(reply);
 
             this.addActivityLog(`Voice Query: "${commandText}"`);
-        } catch (e) {
-            this.responseTranscript.textContent = 'Error connecting to AI Brain: ' + e.message;
+        } catch (error) {
+            this.responseTranscript.textContent = `Unable to reach the AI service: ${error.message}`;
             this.voiceStatus.textContent = 'Ready to listen';
             this.listenBtn.classList.remove('listening');
         }
     }
 
+    speakResponse(text = this.responseTranscript.textContent) {
+        if (!('speechSynthesis' in window) || !text) {
+            this.showNotification('Speech output is not available in this browser', 'warning');
+            return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = this.settings.voiceSpeed / 100;
+        window.speechSynthesis.speak(utterance);
+    }
+
     typeWriterText(element, text, onComplete) {
         element.textContent = '';
+        text = String(text || '');
         let i = 0;
         const speed = 20; // ms per char
         const timer = setInterval(() => {
@@ -336,31 +438,31 @@ class OmniAIUI {
         const encryptResult = document.getElementById('encryptResult');
         const text = dataInput.value;
 
-        if (!text) {
+        if (!text.trim()) {
             this.showNotification('Please enter data to encrypt', 'warning');
             return;
         }
 
         try {
-            const res = await fetch('/api/encrypt', {
+            const json = await this.requestJson('/api/encrypt', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text })
             });
-            const json = await res.json();
-            const data = json.data || {};
-            encryptResult.innerHTML = `
-                <strong>Encrypted Payload:</strong><br>
-                <code>${data.encrypted || btoa(text)}</code><br><br>
-                <strong>Status:</strong> Fernet Secured ✓
-            `;
+            const data = json.data;
+            this.renderResult(encryptResult, [
+                ['Encrypted payload', data.encrypted],
+                ['Recovery key (store separately)', data.key],
+                ['Algorithm', data.algorithm],
+                ['Important', data.key_warning],
+            ]);
             this.addActivityLog('Data encrypted successfully via backend');
             this.playSound('success');
-        } catch (e) {
-            const encrypted = btoa(text);
-            encryptResult.innerHTML = `<strong>Encrypted (Offline):</strong><br><code>${encrypted}</code>`;
-            this.addActivityLog('Data encrypted (offline mode)');
-            this.playSound('success');
+            this.showNotification('Data encrypted. Save the recovery key separately.');
+        } catch (error) {
+            encryptResult.textContent = `Encryption failed: ${error.message}`;
+            this.addActivityLog(`Encryption failed: ${error.message}`);
+            this.showNotification(error.message, 'error');
         }
     }
 
@@ -375,57 +477,52 @@ class OmniAIUI {
         }
 
         try {
-            const res = await fetch('/api/hash', {
+            const json = await this.requestJson('/api/hash', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })
             });
-            const json = await res.json();
-            const data = json.data || {};
-            hashResult.innerHTML = `
-                <strong>Hash:</strong><br>
-                <code>${data.hash || this.simpleHash(password)}</code><br><br>
-                <strong>Salt:</strong> ${data.salt || 'PBKDF2_salt'}
-            `;
+            const data = json.data;
+            this.renderResult(hashResult, [
+                ['Hash', data.hash],
+                ['Salt', data.salt],
+                ['Algorithm', data.algorithm],
+                ['Iterations', data.iterations],
+            ]);
+            passwordInput.value = '';
             this.addActivityLog('Password hashed securely');
             this.playSound('success');
-        } catch (e) {
-            const hash = this.simpleHash(password);
-            hashResult.innerHTML = `<strong>Hash (Offline):</strong><br><code>${hash}</code>`;
-            this.addActivityLog('Password hashed (offline mode)');
-            this.playSound('success');
+        } catch (error) {
+            hashResult.textContent = `Password hashing failed: ${error.message}`;
+            this.addActivityLog(`Password hashing failed: ${error.message}`);
+            this.showNotification(error.message, 'error');
         }
     }
 
     async runSecurityAudit() {
         const auditResults = document.getElementById('auditResults');
-        auditResults.innerHTML = '<div class="audit-item">Scanning security parameters...</div>';
+        auditResults.textContent = 'Checking local application configuration…';
 
         try {
-            const res = await fetch('/api/audit', { method: 'POST' });
-            const json = await res.json();
-            const data = json.data || {};
-            const auditItems = [
-                { status: 'success', message: `Audit Status: ${data.status || 'secure'}` },
-                { status: 'success', message: `Checks Passed: ${data.checks_passed || 8}` },
-                { status: 'success', message: `Threats Detected: ${data.threats_found || 0}` },
-                { status: 'success', message: 'Fernet Encryption: Active' },
-                { status: 'success', message: 'Ransomware Shield: Enabled' }
-            ];
-
-            let html = '';
-            auditItems.forEach(item => {
-                html += `<div class="audit-item ${item.status}">✓ ${item.message}</div>`;
+            const json = await this.requestJson('/api/audit', { method: 'POST' });
+            const data = json.data;
+            auditResults.replaceChildren();
+            data.checks.forEach((check) => {
+                const item = document.createElement('div');
+                item.className = `audit-item ${check.status === 'passed' ? 'success' : 'warning'}`;
+                item.textContent = `${check.status === 'passed' ? '✓' : '⚠'} ${check.name}: ${check.detail}`;
+                auditResults.appendChild(item);
             });
-            auditResults.innerHTML = html;
-            this.addActivityLog('Security audit completed via backend');
-            this.showNotification('Security audit passed!');
-            this.playSound('success');
-        } catch (e) {
-            auditResults.innerHTML = '<div class="audit-item success">✓ Security Audit Passed (Cached)</div>';
-            this.addActivityLog('Security audit completed');
-            this.showNotification('Security audit passed!');
-            this.playSound('success');
+            const scope = document.createElement('p');
+            scope.className = 'audit-scope';
+            scope.textContent = data.scope;
+            auditResults.appendChild(scope);
+            this.addActivityLog(`Local configuration checks: ${data.status}`);
+            this.showNotification(`Configuration checks ${data.status}`, data.status === 'passed' ? 'success' : 'warning');
+        } catch (error) {
+            auditResults.textContent = `Configuration checks failed: ${error.message}`;
+            this.addActivityLog(`Configuration checks failed: ${error.message}`);
+            this.showNotification(error.message, 'error');
         }
     }
 
@@ -446,35 +543,26 @@ class OmniAIUI {
         nlpResult.innerHTML = '<em>Analyzing text with AI Brain...</em>';
 
         try {
-            const res = await fetch('/api/chat', {
+            const json = await this.requestJson('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: text })
             });
-
-            const json = await res.json();
             const details = json.details || {};
-            const confPercent = details.confidence ? Math.round(details.confidence * 100) : 95;
-
-            nlpResult.innerHTML = `
-                <strong>Live AI Analysis:</strong><br>
-                <strong>Intent:</strong> ${details.intent || 'General Query'}<br>
-                <strong>Confidence:</strong> ${confPercent}%<br>
-                <strong>Entities:</strong> ${JSON.stringify(details.entities || {})}<br>
-                <strong>AI Response:</strong> ${json.response}<br>
-            `;
+            const result = [
+                ['Intent', details.intent || 'General query'],
+                ['Confidence', Number.isFinite(details.confidence) ? `${Math.round(details.confidence * 100)}%` : 'Not reported'],
+                ['Entities', JSON.stringify(details.entities || {})],
+                ['AI response', json.response],
+            ];
+            this.renderResult(nlpResult, result);
 
             this.addActivityLog(`NLP Analysis for "${text.substring(0, 20)}..."`);
             this.playSound('success');
-        } catch (e) {
-            nlpResult.innerHTML = `
-                <strong>Analysis Results (Local):</strong><br>
-                Intent: General Query<br>
-                Confidence: 85%<br>
-                Response: Backend offline - showing offline prediction.<br>
-            `;
-            this.addActivityLog('Text analysis completed (offline)');
-            this.playSound('success');
+        } catch (error) {
+            nlpResult.textContent = `Analysis unavailable: ${error.message}`;
+            this.addActivityLog(`Text analysis failed: ${error.message}`);
+            this.showNotification(error.message, 'error');
         }
     }
 
@@ -483,17 +571,24 @@ class OmniAIUI {
         const modelsStatus = document.getElementById('modelsStatus');
         if (!modelsStatus) return;
         try {
-            const res  = await fetch('/api/capabilities');
-            const json = await res.json();
-            const caps = json.data || {};
-            modelsStatus.innerHTML = Object.entries(caps)
-                .map(([k, v]) => `<strong>${k}:</strong> ${v ? '✓ Available' : '✗ Not installed'}<br>`)
-                .join('');
-        } catch (_) {
-            modelsStatus.innerHTML = '<em>Backend offline — capabilities unavailable.</em>';
+            const json = await this.requestJson('/api/capabilities');
+            const caps = json.data;
+            this.renderResult(modelsStatus, Object.entries(caps).map(([name, installed]) => [
+                name,
+                installed ? 'Available' : 'Not installed',
+            ]));
+            this.setCapabilityBadge('tensorflowStatus', caps.tensorflow);
+            this.setCapabilityBadge('pytorchStatus', caps.pytorch);
+            this.setCapabilityBadge('encryptionStatus', caps.encryption);
+            this.setCapabilityBadge('monitorStatus', caps.system_monitoring);
+            this.setCapabilityBadge(
+                'voiceEngineStatus',
+                caps.speech_recognition || caps.text_to_speech,
+            );
+        } catch (error) {
+            modelsStatus.textContent = `Capabilities unavailable: ${error.message}`;
         }
         this.addActivityLog('AI capabilities status retrieved');
-        this.playSound('success');
     }
 
     // ========================================================================
@@ -516,7 +611,12 @@ class OmniAIUI {
     addTerminalLine(text) {
         const line = document.createElement('div');
         line.className = 'terminal-line';
-        line.innerHTML = `<span class="terminal-prompt">$</span><span>${text}</span>`;
+        const prompt = document.createElement('span');
+        prompt.className = 'terminal-prompt';
+        prompt.textContent = '$';
+        const content = document.createElement('span');
+        content.textContent = String(text);
+        line.append(prompt, content);
         this.terminalDisplay.appendChild(line);
         this.terminalDisplay.scrollTop = this.terminalDisplay.scrollHeight;
     }
@@ -544,37 +644,34 @@ class OmniAIUI {
 
         if (cmd === 'status') {
             try {
-                const r = await fetch('/api/status');
-                const j = await r.json();
+                const j = await this.requestJson('/api/status');
                 this.addTerminalLine(`Brain available: ${j.brain_available}`);
                 this.addTerminalLine(`Timestamp: ${j.timestamp}`);
-            } catch (e) { this.addTerminalLine('Backend offline'); }
+            } catch (error) { this.addTerminalLine(`Backend unavailable: ${error.message}`); }
             this.addActivityLog('Command: status');
             return;
         }
 
         if (cmd === 'health') {
             try {
-                const r = await fetch('/api/health');
-                const j = await r.json();
+                const j = await this.requestJson('/api/health');
                 const d = j.data || {};
                 this.addTerminalLine(`Status:  ${d.overall_status || 'unknown'}`);
                 this.addTerminalLine(`CPU:     ${Math.round(d.cpu_usage ?? 0)}%`);
                 this.addTerminalLine(`Memory:  ${Math.round(d.memory_usage ?? 0)}%`);
                 this.addTerminalLine(`Disk:    ${Math.round(d.disk_usage ?? 0)}%`);
-            } catch (e) { this.addTerminalLine('Backend offline'); }
+            } catch (error) { this.addTerminalLine(`Backend unavailable: ${error.message}`); }
             this.addActivityLog('Command: health');
             return;
         }
 
         if (cmd === 'capabilities') {
             try {
-                const r = await fetch('/api/capabilities');
-                const j = await r.json();
+                const j = await this.requestJson('/api/capabilities');
                 Object.entries(j.data || {}).forEach(([k, v]) => {
                     this.addTerminalLine(`${k.padEnd(25)} ${v ? '✓ available' : '✗ not installed'}`);
                 });
-            } catch (e) { this.addTerminalLine('Backend offline'); }
+            } catch (error) { this.addTerminalLine(`Backend unavailable: ${error.message}`); }
             this.addActivityLog('Command: capabilities');
             return;
         }
@@ -585,14 +682,13 @@ class OmniAIUI {
             const msg = askMatch[1];
             this.addTerminalLine(`Sending to brain: "${msg}"`);
             try {
-                const r = await fetch('/api/chat', {
+                const j = await this.requestJson('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: msg }),
                 });
-                const j = await r.json();
                 this.addTerminalLine(`Brain: ${j.response}`);
-            } catch (e) { this.addTerminalLine('Brain unavailable: ' + e.message); }
+            } catch (error) { this.addTerminalLine(`Brain unavailable: ${error.message}`); }
             this.addActivityLog(`Brain query: ${msg}`);
             return;
         }
@@ -605,6 +701,41 @@ class OmniAIUI {
     // UTILITIES
     // ========================================================================
 
+    async requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        let payload;
+        try {
+            payload = await response.json();
+        } catch {
+            throw new Error(`The server returned an invalid response (${response.status})`);
+        }
+        if (!response.ok || payload.success === false) {
+            throw new Error(payload.error || `Request failed (${response.status})`);
+        }
+        return payload;
+    }
+
+    renderResult(container, entries) {
+        container.replaceChildren();
+        entries.forEach(([label, value]) => {
+            const row = document.createElement('div');
+            const heading = document.createElement('strong');
+            heading.textContent = `${label}: `;
+            const content = document.createElement('span');
+            content.textContent = String(value ?? 'Not reported');
+            row.append(heading, content);
+            container.appendChild(row);
+        });
+    }
+
+    setCapabilityBadge(id, available) {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        const isAvailable = Boolean(available);
+        badge.textContent = isAvailable ? 'Available' : 'Not installed';
+        badge.classList.toggle('unavailable', !isAvailable);
+    }
+
     addActivityLog(message) {
         const item = document.createElement('div');
         item.className = 'activity-item';
@@ -612,10 +743,13 @@ class OmniAIUI {
         const now = new Date();
         const time = now.toLocaleTimeString();
 
-        item.innerHTML = `
-            <span class="time">${time}</span>
-            <span class="action">${message}</span>
-        `;
+        const timeLabel = document.createElement('span');
+        timeLabel.className = 'time';
+        timeLabel.textContent = time;
+        const action = document.createElement('span');
+        action.className = 'action';
+        action.textContent = String(message);
+        item.append(timeLabel, action);
 
         this.activityLog.insertBefore(item, this.activityLog.firstChild);
 
@@ -623,16 +757,6 @@ class OmniAIUI {
         while (this.activityLog.children.length > 10) {
             this.activityLog.removeChild(this.activityLog.lastChild);
         }
-    }
-
-    simpleHash(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return Math.abs(hash).toString(16).padStart(16, '0').substring(0, 32).toUpperCase();
     }
 
     showNotification(message, type = 'success') {
@@ -643,14 +767,15 @@ class OmniAIUI {
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: linear-gradient(135deg, #d946ef, #ec4899);
+            background: ${type === 'error' ? '#b42318' : type === 'warning' ? '#9a6700' : 'linear-gradient(135deg, #d946ef, #ec4899)'};
             color: white;
             border-radius: 10px;
             z-index: 10000;
             box-shadow: 0 0 30px rgba(217, 70, 239, 0.5);
             animation: slideInRight 0.3s ease-out;
         `;
-        notification.textContent = message;
+        notification.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        notification.textContent = String(message);
         document.body.appendChild(notification);
 
         setTimeout(() => {
@@ -662,13 +787,8 @@ class OmniAIUI {
     playSound(type = 'click') {
         if (!this.settings.soundEnabled) return;
 
-        // Create simple beep using Web Audio API
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
 
         let frequency, duration;
 
@@ -694,12 +814,20 @@ class OmniAIUI {
                 duration = 0.05;
         }
 
-        oscillator.frequency.value = frequency;
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + duration);
+        try {
+            const audioContext = this.audioContext || (this.audioContext = new AudioContext());
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = frequency;
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        } catch (error) {
+            console.warn('Sound effects are unavailable:', error.message);
+        }
     }
 
     updateClock() {
@@ -718,32 +846,40 @@ class OmniAIUI {
     startupSequence() {
         this.addActivityLog('OMNI-AI initialised — connecting to backend...');
         this.updateSystemStats();
+        this.getModelsStatus();
 
         // Check backend availability on start
-        fetch('/api/status')
-            .then(r => r.json())
-            .then(j => {
-                const label = j.brain_available ? 'AI Brain: Online ✓' : 'AI Brain: Mock mode';
+        this.requestJson('/api/status')
+            .then((j) => {
+                const label = j.brain_available ? 'AI brain ready' : 'AI running in mock mode';
+                document.getElementById('brainStatus').textContent = j.brain_available ? 'Ready' : 'Mock mode';
+                this.systemOnlineStatus.textContent = 'System connected';
                 this.addActivityLog(label);
                 this.showNotification('OMNI-AI System Ready — ' + label);
             })
-            .catch(() => {
+            .catch((error) => {
+                document.getElementById('brainStatus').textContent = 'Unavailable';
+                this.systemOnlineStatus.textContent = 'Backend offline';
                 this.addActivityLog('Backend offline — UI only mode');
-                this.showNotification('OMNI-AI UI Ready (backend offline)', 'warning');
+                this.showNotification(`Backend unavailable: ${error.message}`, 'warning');
             });
 
         // Update clock every second
         setInterval(() => this.updateClock(), 1000);
 
         // Fetch real system stats every 10 seconds
-        setInterval(() => this.updateSystemStats(), 10000);
+        setInterval(() => {
+            this.updateSystemStats();
+            this.updateSystemMonitor();
+        }, 10000);
 
         // Initial updates
         this.updateClock();
+        this.updateSystemMonitor();
 
         // Play startup sound
-        setTimeout(() => this.playSound('beep'), 500);
     }
+
 }
 
 // ============================================================================
